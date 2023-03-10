@@ -1,0 +1,8 @@
+﻿External dependencies are listed below:
+
+wxWidgets (v3.2.0)
+OpenGL (glew)
+OpenGL Mathematics (GLM)
+OpenAL-Soft
+AudioFile (header-only available at https://github.com/adamstark/AudioFile.git)
+OBJ Loader (header-only available at https://github.com/Bly7/OBJ-Loader.git)

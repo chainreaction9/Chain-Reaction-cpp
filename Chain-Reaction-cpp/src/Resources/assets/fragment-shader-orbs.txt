@@ -1,0 +1,20 @@
+#version 400
+in vec3 normalWorld;
+in vec4 vPosition;
+out vec4 outputColor;
+uniform vec3 cameraPosition; //Current camera position
+uniform vec4 orbColor;
+uniform vec3 vDiffuse; //diffusive color property specification.
+uniform vec3 vSpecular; //specular color property specification.
+uniform float vSpecularExponent; //specular exponent property specification.
+uniform vec3 lightDirection; //only considers directional light;
+void main(){
+	vec3 viewDir = normalize(cameraPosition - vec3(vPosition.xyz));
+	vec3 sunDir = normalize(lightDirection);
+	vec3 reflectionVector =  normalize(2 * dot(normalWorld, -sunDir) * normalWorld + sunDir);
+	float brightness = clamp(1.1f * dot(normalWorld, -sunDir), 0.0f, 1.0f);
+	vec3 diffuseComponent = vec3(orbColor.xyz);
+	vec3 specularComponent = vSpecular * pow(dot(reflectionVector, viewDir), vSpecularExponent);
+	vec3 color = clamp(diffuseComponent + specularComponent, 0.0f, 1.0f);
+	outputColor = vec4(color * brightness, 1.0f);
+}
