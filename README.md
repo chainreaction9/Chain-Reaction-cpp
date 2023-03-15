@@ -19,7 +19,7 @@ The project can be built with [CMake](https://cmake.org/) (version >= 3.20). In 
 3. [OpenGL Mathematics (GLM)](https://glm.g-truc.net/0.9.9/)
 4. [OpenAL-Soft](https://github.com/kcat/openal-soft)
 
-The four cmake options ```WXWIDGETS_AUTO_DOWNLOAD```, ```GLM_AUTO_DOWNLOAD```, ```GLEW_AUTO_DOWNLOAD```, ```OPENAL_AUTO_DOWNLOAD``` defined in [DefaultOptions.cmake](/DefaultOptions.cmake) are set by default, so that if the dependencies are not available, they will automatically be downloaded with a ``` FetchContent_MakeAvailable``` call in the configuration time and be built from scratch. One can configure the a build with the follwing cmake commands from the project root directory:
+The four cmake options ```WXWIDGETS_AUTO_DOWNLOAD```, ```GLM_AUTO_DOWNLOAD```, ```GLEW_AUTO_DOWNLOAD```, ```OPENAL_AUTO_DOWNLOAD``` defined in [DefaultOptions.cmake](/DefaultOptions.cmake) are set by default, so that if the dependencies are not available, they will automatically be downloaded with a ``` FetchContent_MakeAvailable``` call during the configuration time and be built from scratch. One can configure the build with the follwing cmake commands from the project root directory:
 
 - **Debug** build: 
 
