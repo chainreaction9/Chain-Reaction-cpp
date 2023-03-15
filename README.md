@@ -28,13 +28,16 @@ cmake -S . -B destination_folder -DCMAKE_BUILD_TYPE=Debug
 ```
 
 - **Release** build : 
+
 ```bash
 cmake -S . -B destination_folder -DCMAKE_BUILD_TYPE=Release
 ```
 
 Assuming the configuration went well, you can build the binary executable by running the command 
+
 ```bash
 cmake --build destination_folder
 ```
+
 ### Resource files
 The project depends on the resource files (*.obj, shaders, *.wav, *mtl, etc.) in the [resource](/Chain-Reaction-cpp/src/Resources/resource) directory. On Windows platform [resource.zip](/Chain-Reaction-cpp/src/Resources/resource.zip) containing these files will automatically be embedded into the binary executable with the compilation of the source file [Chain-Reaction.rc](/Chain-Reaction-cpp/src/Chain-Reaction.rc). On other platforms the user will need to manually specify the zip file at the start of the application.
