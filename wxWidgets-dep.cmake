@@ -14,6 +14,7 @@ set(wxWidgets_USE_STATIC ON)
 set(wxBUILD_SAMPLES OFF)
 set(wxBUILD_COMPATIBILITY 3.0)
 #################################################################################
+MESSAGE(STATUS "Looking for dependency ${WXWIDGETS_PROJECT_NAME} ...")
 find_package(${WXWIDGETS_PROJECT_NAME} CONFIG NAMES wxWidgets)
 if (${WXWIDGETS_PROJECT_NAME}_FOUND)
 	SET(${WXWIDGETS_PROJECT_NAME}_POPULATED TRUE)
@@ -26,7 +27,6 @@ FetchContent_Declare(
 	URL_HASH SHA1=29f70fb17f42345a281375b4219fa0b8e8c5dfcd
 )
 # This will try calling find_package() first for dependencies. If the dependency is not found, then it will download the dependency from github and add it to the project for further build.
-MESSAGE(STATUS "Looking for dependency ${WXWIDGETS_PROJECT_NAME} ...")
 if (WXWIDGETS_AUTO_DOWNLOAD)
 	MESSAGE(STATUS "WXWIDGETS_AUTO_DOWNLOAD option is turned on. The dependency ${WXWIDGETS_PROJECT_NAME} will be automatically downloaded if needed ...")
 	if (NOT ${WXWIDGETS_PROJECT_NAME}_POPULATED)

@@ -12,6 +12,7 @@ set(ALSOFT_INSTALL_EXAMPLES OFF)
 set(ALSOFT_INSTALL_UTILS OFF)
 set(LIBTYPE STATIC)
 #############################################################
+MESSAGE(STATUS "Looking for dependency ${OPENAL_PROJECT_NAME} ...")
 find_package(${OPENAL_PROJECT_NAME} CONFIG
 	NAMES OpenAL OpenAL32
 )
@@ -27,7 +28,6 @@ FetchContent_Declare(
 	GIT_PROGRESS TRUE
 )
 # This will try calling find_package() first for dependencies. If the dependency is not found, then it will download the dependency from github and add it to the project for further build.
-MESSAGE(STATUS "Looking for dependency ${OPENAL_PROJECT_NAME} ...")
 if (OPENAL_AUTO_DOWNLOAD)
 	MESSAGE(STATUS "OPENAL_AUTO_DOWNLOAD option is turned on. The dependency ${OPENAL_PROJECT_NAME} will be automatically downloaded if needed ...")
 	if (NOT ${OPENAL_PROJECT_NAME}_POPULATED)

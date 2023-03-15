@@ -6,7 +6,7 @@ set(GLM_PROJECT_NAME "glm")
 set (GLM_SOURCE_URL "https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip")
 #GLM options
 set(BUILD_TESTING OFF)
-
+MESSAGE(STATUS "Looking for dependency ${GLM_PROJECT_NAME} ...")
 #################################################################################
 find_package(${GLM_PROJECT_NAME} NAMES glm GLM CONFIG PATH_SUFFIXES "cmake" "cmake/glm")
 if (${GLM_PROJECT_NAME}_FOUND)
@@ -19,7 +19,6 @@ FetchContent_Declare(
 	URL "${GLM_SOURCE_URL}"
 )
 # This will try calling find_package() first for dependencies. If the dependency is not found, then it will download the dependency from github and add it to the project for further build.
-MESSAGE(STATUS "Looking for dependency ${GLM_PROJECT_NAME} ...")
 if (GLM_AUTO_DOWNLOAD)
 	MESSAGE(STATUS "GLM_AUTO_DOWNLOAD option is turned on. The dependency ${GLM_PROJECT_NAME} will be automatically downloaded if needed ...")
 	if (NOT ${GLM_PROJECT_NAME}_POPULATED)

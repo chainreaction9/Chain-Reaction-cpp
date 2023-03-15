@@ -9,7 +9,7 @@ set(GLEW_USE_STATIC_LIBS ON)
 set(BUILD_UTILS OFF)
 set(ONLY_LIBS ON)
 ############################################################
-
+MESSAGE(STATUS "Looking for dependency ${GLEW_PROJECT_NAME} ...")
 find_package(${GLEW_PROJECT_NAME} CONFIG NAMES libglew_static)
 if (${GLEW_PROJECT_NAME}_FOUND)
 	SET(${GLEW_PROJECT_NAME}_POPULATED TRUE)
@@ -24,7 +24,6 @@ FetchContent_Declare(
 )
 
 # This will try calling find_package() first for dependencies. If the dependency is not found, then it will download the dependency from github and add it to the project for further build.
-MESSAGE(STATUS "Looking for dependency ${GLEW_PROJECT_NAME} ...")
 if (GLEW_AUTO_DOWNLOAD)
 	MESSAGE(STATUS "GLEW_AUTO_DOWNLOAD option is turned on. The dependency ${GLEW_PROJECT_NAME} will be automatically downloaded if needed ...")
 	if (NOT ${GLEW_PROJECT_NAME}_POPULATED)

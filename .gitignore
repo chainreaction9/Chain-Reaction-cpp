@@ -250,6 +250,7 @@ ClientBin/
 ~$*
 *~
 *.dbmdl
+*db
 *.dbproj.schemaview
 *.jfm
 *.pfx
@@ -378,5 +379,3 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-#External dependency folder
-[Ee]xternal/
