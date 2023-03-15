@@ -52,7 +52,6 @@ list(APPEND SOURCE_FILES "src/VertexLayout.cpp")
 
 target_sources(${TARGET_NAME} PRIVATE ${SOURCE_FILES})
 
-#add_dependencies(${TARGET_NAME} ${EXTRA_DEPENDENCIES})
 if (CMAKE_VERSION VERSION_GREATER 3.12)
 	set_property(TARGET ${TARGET_NAME} PROPERTY CXX_STANDARD 20)
 endif()

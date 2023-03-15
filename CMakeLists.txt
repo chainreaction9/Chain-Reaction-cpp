@@ -56,7 +56,7 @@ endif()
 
 ## the os must support OpenGL
 find_package(OpenGL REQUIRED)
-
+#include default options for this project in order to configure the dependencies.
 include(DefaultOptions.cmake)
 ## include external cmake project dependencies
 include(Dependencies.cmake)

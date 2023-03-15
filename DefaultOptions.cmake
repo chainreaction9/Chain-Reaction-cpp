@@ -13,7 +13,7 @@ SET(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 option(BUILD_SHARED_LIBS "Build external shared/static libraries" OFF)
 ###  If the following options are turned off, the targetted dependencies won't be downloaded.
-###  However, they are mandatory requirement for this project.
+###  However, they are mandatory requirements for this project.
 ###  So please make sure that the dependencies can be found by a find_package call in config mode
 ###  before turning the options off. Git is also a mandatory requirement for some (glew and OpenAL)
 ###  of the downloads to work.

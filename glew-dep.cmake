@@ -29,7 +29,6 @@ if (GLEW_AUTO_DOWNLOAD)
 	MESSAGE(STATUS "GLEW_AUTO_DOWNLOAD option is turned on. The dependency ${GLEW_PROJECT_NAME} will be automatically downloaded if needed ...")
 	if (NOT ${GLEW_PROJECT_NAME}_POPULATED)
 		MESSAGE(DEBUG "find_package could not locate dependency ${GLEW_PROJECT_NAME} in config mode.\n -- The source files are being downloaded for build purpose ...")
-#		find_package(GIT REQUIRED)
 		FetchContent_MakeAvailable(${GLEW_PROJECT_NAME})
 		FetchContent_GetProperties(${GLEW_PROJECT_NAME}
 			POPULATED ${GLEW_PROJECT_NAME}_POPULATED

@@ -32,7 +32,6 @@ if (OPENAL_AUTO_DOWNLOAD)
 	MESSAGE(STATUS "OPENAL_AUTO_DOWNLOAD option is turned on. The dependency ${OPENAL_PROJECT_NAME} will be automatically downloaded if needed ...")
 	if (NOT ${OPENAL_PROJECT_NAME}_POPULATED)
 		MESSAGE(DEBUG "find_package could not locate dependency ${OPENAL_PROJECT_NAME} in config mode.\n -- The source files are being downloaded for build purpose ...")
-#		find_package(GIT REQUIRED)
 		FetchContent_MakeAvailable(${OPENAL_PROJECT_NAME})
 		FetchContent_GetProperties(${OPENAL_PROJECT_NAME}
 			POPULATED ${OPENAL_PROJECT_NAME}_POPULATED
