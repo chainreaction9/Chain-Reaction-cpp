@@ -1,3 +1,6 @@
+/*
+This file is a refactored version of the javascript code available at https://github.com/mourner/icomesh.git
+*/
 #pragma once
 #ifndef ICOSPHERE_H
 #define ICOSPHERE_H
