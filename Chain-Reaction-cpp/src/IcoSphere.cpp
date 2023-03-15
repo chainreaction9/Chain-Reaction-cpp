@@ -1,5 +1,5 @@
 /*
-This file is a refactored version of the typescript code available at https://github.com/mourner/icomesh.git
+This file is a refactored version of the javascript code available at https://github.com/mourner/icomesh.git
 */
 #include "PrecompiledHeader.h"
 #include "IcoSphere.h"
