@@ -72,7 +72,7 @@ bool ResourceUtilities::extractZipResource(const void* rawData, size_t sizeOfDat
 			entryData->name = entry->GetName();
 			wxFileOffset entrySize = entry->GetSize();
 			entryData->size = entrySize;
-			entryData->data = new BYTE[entrySize]; //Allocate memory to contain zip entry data
+			entryData->data = new unsigned char[entrySize]; //Allocate memory to contain zip entry data
 			storageLocation.push_back(entryData);
 			zip->Read(entryData->data, entrySize);
 			if (zip->LastRead() == entrySize) {
@@ -97,6 +97,7 @@ bool ResourceUtilities::extractZipResource(const void* rawData, size_t sizeOfDat
 bool ResourceUtilities::extractZipResource(const char* pathToZipFile, std::vector<ResourceUtilities::FileData*>& storageLocation, const std::set<std::string>& fileNameList, wxProgressDialog* progressDialog) {
 	wxFileInputStream zipFile(pathToZipFile);
 	if (!zipFile.IsOk()) {
+		wxLogDebug(wxString::Format("[Chain-Reaction] Error: could not locate zip resource '%s' ...", pathToZipFile));
 		wxMessageBox(wxString::Format("Could not locate zip file '%s'.", pathToZipFile), "Resource Loading Error!", wxOK | wxICON_ERROR);
 		return false;
 	}
@@ -111,11 +112,13 @@ bool ResourceUtilities::extractZipResource(const char* pathToZipFile, std::vecto
 			entryData->name = entry->GetName();
 			wxFileOffset entrySize = entry->GetSize();
 			entryData->size = entrySize;
-			entryData->data = new BYTE[entrySize]; //Allocate memory to contain zip entry data
+			entryData->data = new unsigned char[entrySize]; //Allocate memory to contain zip entry data
 			storageLocation.push_back(entryData);
 			zip->Read(entryData->data, entrySize);
 			if (zip->LastRead() == entrySize) {
+				wxLogDebug(wxString::Format("[Chain-Reaction] -- zip entry '%s' is successfully extracted ...", entryData->name));
 				if (!fileNameList.count(entryData->name)) {
+					wxLogDebug(wxString::Format("[Chain-Reaction] Error: zip entry '%s' is not enlisted as a resource ...", entryData->name));
 					wxMessageBox(wxString::Format("Invalid entry '%s' in module resource!", entryData->name.c_str()), "Resource Extraction Error!", wxOK | wxICON_ERROR, progressDialog);
 					return false;
 				}
@@ -126,6 +129,7 @@ bool ResourceUtilities::extractZipResource(const char* pathToZipFile, std::vecto
 				count++;
 			}
 			else {
+				wxLogDebug(wxString::Format("[Chain-Reaction] Error: failed to read all bytes of entry '%s' in zip resource ...", entryData->name.c_str()));
 				wxMessageBox(wxString::Format("Failed to read all bytes of entry '%s' in module resource!", entryData->name.c_str()), "Resource Extraction Error!", wxOK | wxICON_ERROR, progressDialog);
 				return false;
 			}
@@ -136,7 +140,7 @@ bool ResourceUtilities::extractZipResource(const char* pathToZipFile, std::vecto
 void ResourceUtilities::clearZipStorage(std::vector<ResourceUtilities::FileData*>& storage) {
 	for (auto entry : storage) {
 		if (entry != nullptr) {
-			delete[] entry->data;
+			if (entry->data) delete[] entry->data;
 			delete entry;
 		}
 	}

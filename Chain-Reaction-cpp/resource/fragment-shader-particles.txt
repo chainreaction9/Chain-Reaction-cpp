@@ -1,5 +1,9 @@
+/*********************************************************************************
+********************* Fragment shader for rendering 3D Brownian particles *****************
+*/
 #version 300 es
 precision highp float;
+precision highp int;
 in vec3 normal;
 in vec4 vPosition;
 out vec4 outputColor;
@@ -9,7 +13,7 @@ uniform float angle;
 uniform float isFlickering;
 uniform vec3 vDiffuse;
 uniform vec3 vSpecular;
-uniform float vSpecularExponent;
+uniform float vSpExp;
 uniform vec3 lightDirection;
 float randomExponent(vec2 config) {
     return fract(sin(dot(config.xy, vec2(12.9898, 78.233))) * 43758.5453);
@@ -22,7 +26,7 @@ void main(){
     float exponent = randomExponent(vec2(1.0, pow(angle, 1.5)));
     vec3 randomColor = clamp(vec3(0.5, 0.5, 0.0) + vec3(sin(angle/10.0), cos(angle/20.0 + vPosition.y), sin(vPosition.z)), 0.0, 1.0);
     vec3 modifiedDiffuseColor = (1.0 - isFlickering) * particleColor.xyz + isFlickering * randomColor;
-    vec3 specularComponent = clamp(modifiedDiffuseColor * vSpecular * pow(dot(reflectionVector, viewDir), vSpecularExponent), 0.0, 1.0);
+    vec3 specularComponent = clamp(modifiedDiffuseColor * vSpecular * pow(dot(reflectionVector, viewDir), vSpExp), 0.0, 1.0);
     vec3 color = clamp((modifiedDiffuseColor + specularComponent) * brightness, 0.0, 1.0);
     outputColor = vec4( color , 1.0);
 }

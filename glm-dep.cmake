@@ -8,32 +8,36 @@ set (GLM_SOURCE_URL "https://github.com/g-truc/glm/releases/download/0.9.9.8/glm
 set(BUILD_TESTING OFF)
 
 #################################################################################
+find_package(${GLM_PROJECT_NAME} NAMES glm GLM CONFIG PATH_SUFFIXES "cmake" "cmake/glm")
+if (${GLM_PROJECT_NAME}_FOUND)
+	SET(${GLM_PROJECT_NAME}_POPULATED TRUE)
+endif()
 FetchContent_Declare(
 	${GLM_PROJECT_NAME}
+	DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+	USES_TERMINAL_DOWNLOAD TRUE
 	URL "${GLM_SOURCE_URL}"
-	FIND_PACKAGE_ARGS NAMES glm GLM CONFIG PATH_SUFFIXES "cmake" "cmake/glm"
 )
 # This will try calling find_package() first for dependencies. If the dependency is not found, then it will download the dependency from github and add it to the project for further build.
 MESSAGE(STATUS "Looking for dependency ${GLM_PROJECT_NAME} ...")
 if (GLM_AUTO_DOWNLOAD)
-	FetchContent_MakeAvailable(${GLM_PROJECT_NAME})
-else()
-	find_package(${GLM_PROJECT_NAME} CONFIG
-		NAMES glm GLM PATH_SUFFIXES "cmake" "cmake/glm"
-	)
-	if (${GLM_PROJECT_NAME}_FOUND)
-		SET(${GLM_PROJECT_NAME}_POPULATED TRUE)
+	MESSAGE(STATUS "GLM_AUTO_DOWNLOAD option is turned on. The dependency ${GLM_PROJECT_NAME} will be automatically downloaded if needed ...")
+	if (NOT ${GLM_PROJECT_NAME}_POPULATED)
+		MESSAGE(DEBUG "find_package could not locate dependency ${GLM_PROJECT_NAME} in config mode.\n -- The source files are being downloaded for build purpose ...")
+		FetchContent_MakeAvailable(${GLM_PROJECT_NAME})
+		FetchContent_GetProperties(${GLM_PROJECT_NAME}
+			POPULATED ${GLM_PROJECT_NAME}_POPULATED
+		)
 	endif()
 endif()
 FetchContent_GetProperties(
-		${GLM_PROJECT_NAME}
-		SOURCE_DIR ${GLM_PROJECT_NAME}_SOURCE_DIR
-		BINARY_DIR ${GLM_PROJECT_NAME}_BINARY_DIR
-		POPULATED ${GLM_PROJECT_NAME}_POPULATED
+	${GLM_PROJECT_NAME}
+	SOURCE_DIR ${GLM_PROJECT_NAME}_SOURCE_DIR
+	BINARY_DIR ${GLM_PROJECT_NAME}_BINARY_DIR
 )
 if(NOT ${GLM_PROJECT_NAME}_POPULATED)
 	### get wxwidget from github
-	MESSAGE(FATAL_ERROR "Required dependency ${GLM_PROJECT_NAME} is neither found by find_package nor has been downloaded with FetchContent_MakeAvailable. Aborting configuration step.")
+	MESSAGE(FATAL_ERROR "Required dependency ${GLM_PROJECT_NAME} is neither found by find_package nor has been downloaded with FetchContent_MakeAvailable.\n -- Aborting configuration step.")
 else()
 	MESSAGE(STATUS "Dependency ${GLM_PROJECT_NAME} has been populated.")
 	if (${GLM_PROJECT_NAME}_SOURCE_DIR)
@@ -62,11 +66,11 @@ else()
 		endif()
 		list(APPEND EXTRA_LINKS glm)
 	else()
-		MESSAGE(STATUS "Dependency ${GLM_PROJECT_NAME} was not found by find_package. Using brute-force build and linking of source files made available by FetchContent_MakeAvailable.")
+		MESSAGE(STATUS "Dependency ${GLM_PROJECT_NAME} was not found by find_package.\n -- Using brute-force build and linking of source files made available by FetchContent_MakeAvailable.")
 		MESSAGE(STATUS "Adding ${GLM_PROJECT_NAME} include directory '${${GLM_PROJECT_NAME}_SOURCE_DIR}/glm' to the target.")
 		list(APPEND EXTRA_INCLUDE_DIRS "${${GLM_PROJECT_NAME}_SOURCE_DIR}/glm")
 		MESSAGE(STATUS "Adding ${GLM_PROJECT_NAME} library paths and linking libraries against the target.")
-		list(APPEND EXTRA_LIB_DIRS "${${GLM_PROJECT_NAME}_BINARY_DIR}/lib")
+		list(APPEND EXTRA_LIB_DIRS "${CMAKE_CURRENT_BINARY_DIR}/lib")
 		list(APPEND EXTRA_LINKS glm)
 	endif()
 endif()

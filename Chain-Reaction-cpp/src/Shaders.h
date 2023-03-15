@@ -26,15 +26,13 @@ public:
 	/*
 	* @brief Updates the uniform variables associated with material
 	* properties (e.g., diffuse color, ambient color, specular color, specular exponent etc.) in the fragment shader.
-	* @brief Assumes that the fragment (or vertex) shader contains the
-	* following uniform variables:
-	* @brief	1. `vDiffuse` (diffuse color, type: vec3<float>),
-	* @brief	2. `vSpecular` (specular color, type: vec3<float>),
-	* @brief	3. `vSpecularExponent` (specular exponent, type: float).
 	* @param {obj::Material} material: a Material object containing associated material properties.
+	* @param {const char*} diffuseColorUniformName: name of the uniform variable (vec3) for diffuse color in the shader.
+	* @param {const char*} specularColorUniformName: name of the uniform variable (vec3) for specular color in the shader.
+	* @param {const char*} specularExponentUniformName: name of the uniform variable (float) for specular exponent in the shader.
 	* @returns true if at least one material property is updated, false otherwise.
 	*/
-	bool applyMaterial(objl::Material material);
+	bool applyMaterial(objl::Material material, const char* diffuseColorUniformName = "vDiffuse", const char* specularColorUniformName = "vSpecular", const char* specularExponentUniformName = "vSpecularExponent");
 	//Binds the shader program.
 	void use() const;
 	//Unbinds the shader program.

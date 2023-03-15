@@ -24,14 +24,12 @@ AppGUIFrame::AppGUIFrame(const wxString& title = "", const wxPoint& position = w
 	window1->SetExtraBorderSize(2);
 
 	topsizer->Add(window1,0,wxEXPAND);
-
 	wxPanel *panelwindow = new wxPanel(window1);
 	this->_topsizerForLeftWindow = new wxBoxSizer(wxVERTICAL);
 	panelwindow->SetSizer(this->_topsizerForLeftWindow);
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	this->_panelOutsideGame = new wxPanel(panelwindow,wxID_ANY,wxDefaultPosition,wxDefaultSize,wxSUNKEN_BORDER);
-	this->_panelOutsideGame->SetMinClientSize(wxSize(185,550));
 	this->_panelOutsideGame->SetBackgroundColour(wxColor(128,128,128));
 
 	this->_topsizerForLeftWindow->Add(this->_panelOutsideGame,1,wxEXPAND);
@@ -266,16 +264,16 @@ AppGUIFrame::AppGUIFrame(const wxString& title = "", const wxPoint& position = w
 	wxSashLayoutWindow *window2 = new wxSashLayoutWindow(this,wxID_ANY,wxPoint(0,0),wxSize(500,500),wxSW_3D);
 	window2->SetOrientation(wxLAYOUT_VERTICAL);
 	window2->SetAlignment(wxLAYOUT_LEFT);
-	window2->SetBackgroundColour(*wxBLACK);
+	window2->SetBackgroundColour(wxColour(128, 128, 150));
 	window2->SetExtraBorderSize(2);
 	topsizer->Add(window2,1,wxEXPAND);
-
 	this->canvas_panel = new AppGLCanvas(window2);
+	wxLogDebug(wxString::Format("[Chain-Reaction] Created wxGLCanvas (OpenGL) object %p ...", this->canvas_panel));
 	topsizer->Fit(this);
 	this->SetMinSize(minsize);
-	this->info_menu = nullptr;
-
+	
 	//********************** Bind all event-handlers dynamically *********************************************
+	wxLogDebug("[Chain-Reaction] Performing dynamic event-bindings to the application-frame object ...");
 	Bind(wxEVT_COMMAND_BUTTON_CLICKED, &AppGUIFrame::OnButtonStart, this, wxID_OK);
 	Bind(wxEVT_COMMAND_BUTTON_CLICKED, &AppGUIFrame::OnButtonTurnInfo, this, ID_INFO_BUTTON);
 	Bind(wxEVT_COMMAND_BUTTON_CLICKED, &AppGUIFrame::OnButtonUndo, this, wxID_UNDO);
@@ -287,13 +285,20 @@ AppGUIFrame::AppGUIFrame(const wxString& title = "", const wxPoint& position = w
 		Bind(wxEVT_COMBOBOX_DROPDOWN, &AppGUIFrame::OnDropDown, this, ID_COLOR_CHOICE + i);
 	}
 	Bind(wxEVT_COMMAND_BUTTON_CLICKED, &AppGUIFrame::OnButtonRegisterOnline, this, ID_REGISTER_ONLINE);
+	wxLogDebug("[Chain-Reaction] Dynamic event-bindings to the application-frame object is completed ...");
 	//*********************************************************************************************************
 }
 void AppGUIFrame::OnButtonStart(wxCommandEvent& event){
+	//Reject start of a game if OpenGL canvas is not yet ready for rendering...
+	if (!(this->canvas_panel && this->canvas_panel->IsCanvasReadyForRendering())) {
+		wxLogDebug(wxString::Format("[Chain-Reaction] Error: failed to start the game. OpenGL canvas instance %p is not yet ready for rendering ...", this->canvas_panel));
+		wxMessageBox(wxT("OpenGL canvas is not yet ready for rendering!"), wxT("Error!"), wxOK | wxICON_INFORMATION);
+		return;
+	}
+	//Configure game parameters before the start of a game ....
 	unsigned int numberOfRows = this->_rowChoice->GetSelection() + 6;
 	unsigned int numberOfColumns = this->_columnChoice->GetSelection() + 6;
 	unsigned int player_no = this->_playerChoice->GetSelection() + 2;
-	GameUtilities::GameState* gameInfo = (GameUtilities::GameState*) this->canvas_panel->GetClientData();
 	std::vector<std::string> players;
 	for (unsigned int i = 0; i < player_no; i++){
 		const auto& color = this->_playerColorsWidgetList[i]->GetStringSelection();
@@ -301,25 +306,39 @@ void AppGUIFrame::OnButtonStart(wxCommandEvent& event){
 	}
 	std::set<std::string> player_set = std::set<std::string>(players.begin(),players.end());
 	if ((unsigned int) player_set.size() != (unsigned int) players.size()){
-		wxMessageBox("Same colors are not allowed for multiple players!","Error!",wxOK | wxICON_INFORMATION);
+		wxMessageBox(wxT("Same colors are not allowed for multiple players!"),wxT("Error!"),wxOK | wxICON_INFORMATION);
+		return;
+	}
+	//Retrieve the game object ...
+	GameUtilities::GameState* gameInfo = (GameUtilities::GameState*)this->canvas_panel->GetClientData();
+	if (!gameInfo) {
+		wxLogDebug("[Chain-Reaction] Error: failed to start the game. Game information has not been generated yet ...");
+		wxMessageBox(wxT("Failed to start the game. Game information has not been generated yet!"), wxT("Error!"), wxOK | wxICON_INFORMATION);
 		return;
 	}
 	MainGame* game = (MainGame*) gameInfo->game;
-	game->setAttribute(numberOfRows, numberOfColumns, players);
-	
+	if (!game) {
+		wxLogDebug("[Chain-Reaction] Error: failed to start the game. Game object has not been created yet ...");
+		wxMessageBox(wxT("Failed to start the game. Game object has not been created yet!"), wxT("Error!"), wxOK | wxICON_INFORMATION);
+		return;
+	}
+	//Inform the game object about the current canvas dimension.
 	wxSize size = this->canvas_panel->GetClientSize();
-
 	game->setCanvasSize(size.x, size.y);
 	game->setupCamera();
-	game->resetGameVariables();
-	game->updateTurn();
 
+	//Pass the game parameters to the game object ...
+	game->resetGameVariables();
+	game->setAttribute(numberOfRows, numberOfColumns, players);
+	game->updateTurn();
 	wxString dummyLabel = wxString::Format("BOARD : %d x %d  ", numberOfRows, numberOfColumns);
 	this->_boardLabel->SetLabel(dummyLabel);
 	dummyLabel = wxString::Format("Players : %d  ",player_no);
 	this->_playerLabel->SetLabel(dummyLabel);
 
+	//Display the control panel containing game information ...
 	ShowGamePanel(true);
+	//Switch the flag indicators for the start of a game ..
 	gameInfo->game_started = 1;
 	gameInfo->isOnline = false;
 	gameInfo->game_ended = 0;
@@ -328,24 +347,22 @@ void AppGUIFrame::OnButtonStart(wxCommandEvent& event){
 void AppGUIFrame::OnButtonTurnInfo(wxCommandEvent& event){
 	int id = event.GetId();
 	GameUtilities::GameState* gameInfo = (GameUtilities::GameState*)this->canvas_panel->GetClientData();
-	if (!gameInfo) return;
+	if (!gameInfo) {
+		wxLogDebug("[Chain-Reaction] Error: failed to start the game. Game information has not been generated yet ...");
+		wxMessageBox(wxT("Failed to start the game. Game information has not been generated yet!"), wxT("Error!"), wxOK | wxICON_INFORMATION);
+		return;
+	}
 	if (id == ID_INFO_BUTTON){ //This event was triggered in offline game mode.
 		unsigned int player_no = this->_playerChoice->GetSelection() + 2;
-		unsigned int menuItemCount = this->info_menu->GetMenuItemCount();
-		if (menuItemCount != 0) {
-			for (unsigned int i = 0; i < menuItemCount; i++) {
-				const auto& menuItem = this->info_menu->FindItemByPosition(0);
-				this->info_menu->Delete(menuItem);
-			}
-		}
 		MainGame* offlineGameObject = (MainGame*)gameInfo->game;
+		wxMenu infoMenu(wxT("Current order of players: "));
 		if (!offlineGameObject) return;
 		for (unsigned int i = 0; i < player_no; i++) {
 			const auto& playerColor = this->_playerColorsWidgetList[i]->GetStringSelection();
 			std::string lowerCasePlayerColor = playerColor.Lower().ToStdString();
-			if (!offlineGameObject->isEliminated(lowerCasePlayerColor)) this->info_menu->Append(wxID_ANY, playerColor);
+			if (!offlineGameObject->isEliminated(lowerCasePlayerColor)) infoMenu.Append(wxID_ANY, playerColor);
 		}
-		this->_infoButton->PopupMenu(this->info_menu,27,25);
+		this->_infoButton->PopupMenu(&infoMenu);
 	}
 }
 void AppGUIFrame::OnButtonUndo(wxCommandEvent& event){
@@ -353,6 +370,11 @@ void AppGUIFrame::OnButtonUndo(wxCommandEvent& event){
 	if (gameInfo) {
 		MainGame* game = (MainGame*)gameInfo->game;
 		if (game && !game->isBlastAnimationRunning()) game->undo();
+	}
+	else {
+		wxLogDebug("[Chain-Reaction] Error: failed to start the game. Game information has not been generated yet ...");
+		wxMessageBox(wxT("Failed to start the game. Game information has not been generated yet!"), wxT("Error!"), wxOK | wxICON_INFORMATION);
+		return;
 	}
 }
 void AppGUIFrame::OnButtonStartNew(wxCommandEvent& event){
@@ -461,6 +483,7 @@ std::unordered_map<wxString,wxColor> AppGUIFrame::_createColormap(void){
 	temp["cyan"] = wxColor(0,255,255);
 	temp["purple"] = wxColor(148,0,211);
 	temp["maroon"] = wxColor(179,46,92);
+	temp["white"] = wxColor(255,255,255);
 	return temp;
 }
 void AppGUIFrame::OnButtonRegisterOnline(wxCommandEvent& event){

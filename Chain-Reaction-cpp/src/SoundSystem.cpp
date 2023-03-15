@@ -5,6 +5,7 @@
 
 bool SoundSystem::_systemInitialized = false; // A boolean flag to indicate whether the audio system is sucessfully initialized.
 ALCdevice* SoundSystem::_deviceHandle = nullptr; //Stores device handle for the default sound device. For multiple devices, a list is suitable.
+std::string SoundSystem::_deviceName = ""; //Stores name of the currently used sound device.
 ALCcontext* SoundSystem::_currentContext = nullptr; //Stores the current context. We only deal with a single context here. Each context has a uniquely assigned device. A device can have multiple contexts.
 std::vector<ALuint> SoundSystem::_soundList = {}; //List of all audio bufferID that were created. A buffer data in the list is located on the device whose context was current at the time of upload. For a single device, a single list of ID suffices.
 std::vector<SoundSource*> SoundSystem::_sourceList = {}; //List of all Sound Source objects that were created.
@@ -34,8 +35,8 @@ bool SoundSystem::initSystem() {
 		}
 	}
 	else {
-		ALCdevice* device = alcOpenDevice(nullptr);
-		if ((device) && (alcGetError(device) == ALC_NO_ERROR)) {
+		ALCdevice* device = alcOpenDevice(name.c_str());
+		if (device) {
 			ALCcontext* context = alcCreateContext(device, NULL);
 			if (context == NULL) {
 				wxMessageBox(wxString::Format("Failed to create context on sound device '%s'", name), "Sound System Error!", wxOK | wxICON_ERROR);
@@ -44,12 +45,13 @@ bool SoundSystem::initSystem() {
 			}
 			alcMakeContextCurrent(context);
 			SoundSystem::_deviceHandle = device;
+			SoundSystem::_deviceName.assign(name);
 			SoundSystem::_currentContext = context;
 			SoundSystem::_systemInitialized = true;
 			return true;
 		}
 		else {
-			wxMessageBox(wxString::Format("Failed to initialize default sound device '%s'", name), "Sound System Error!", wxOK | wxICON_ERROR);
+			wxMessageBox(wxString::Format("Failed to initialize default sound device '%s'.", name), "Sound System Error!", wxOK | wxICON_ERROR);
 			SoundSystem::_systemInitialized = false;
 			return false;
 		}
@@ -152,7 +154,7 @@ ALuint SoundSystem::addAudioData(const char* fileName) {
 	dataContainer.clear();
 	return buffer;
 }
-ALuint SoundSystem::addAudioDataFromMemory(const BYTE *source, size_t size) {
+ALuint SoundSystem::addAudioDataFromMemory(const unsigned char* source, size_t size) {
 	if (!SoundSystem::_systemInitialized) return NULL;
 	uint8_t channels = 0;
 	int32_t sampleRate = 0;

@@ -5,41 +5,45 @@ include(FetchContent)
 #################################################################################
 set(WXWIDGETS_PROJECT_NAME "wxWidgets")
 #wxWidget options
-set(wxBUILD_INSTALL ON)
+set(wxBUILD_INSTALL OFF)
 set(wxBUILD_SHARED OFF)
 set(wxUSE_UNICODE ON)
+set(wxUSE_OPENGL ON)
+set(wxUSE_GLCANVAS_EGL OFF) #To support GLEW (glew is built with OpenGL backend) with wxGLCanvas
 set(wxWidgets_USE_STATIC ON)
 set(wxBUILD_SAMPLES OFF)
 set(wxBUILD_COMPATIBILITY 3.0)
 #################################################################################
-
+find_package(${WXWIDGETS_PROJECT_NAME} CONFIG NAMES wxWidgets)
+if (${WXWIDGETS_PROJECT_NAME}_FOUND)
+	SET(${WXWIDGETS_PROJECT_NAME}_POPULATED TRUE)
+endif()
 FetchContent_Declare(
 	${WXWIDGETS_PROJECT_NAME}
+	USES_TERMINAL_DOWNLOAD TRUE
+	DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 	URL "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.0/wxWidgets-3.2.0.zip"
 	URL_HASH SHA1=29f70fb17f42345a281375b4219fa0b8e8c5dfcd
-	FIND_PACKAGE_ARGS NAMES wxWidgets CONFIG
 )
 # This will try calling find_package() first for dependencies. If the dependency is not found, then it will download the dependency from github and add it to the project for further build.
 MESSAGE(STATUS "Looking for dependency ${WXWIDGETS_PROJECT_NAME} ...")
 if (WXWIDGETS_AUTO_DOWNLOAD)
-	FetchContent_MakeAvailable(${WXWIDGETS_PROJECT_NAME})
-else()
-	find_package(${WXWIDGETS_PROJECT_NAME} CONFIG
-		NAMES wxWidgets
-	)
-	if (${WXWIDGETS_PROJECT_NAME}_FOUND)
-		SET(${WXWIDGETS_PROJECT_NAME}_POPULATED TRUE)
+	MESSAGE(STATUS "WXWIDGETS_AUTO_DOWNLOAD option is turned on. The dependency ${WXWIDGETS_PROJECT_NAME} will be automatically downloaded if needed ...")
+	if (NOT ${WXWIDGETS_PROJECT_NAME}_POPULATED)
+		MESSAGE(DEBUG "find_package could not locate dependency ${WXWIDGETS_PROJECT_NAME} in config mode.\n -- The source files are being downloaded for build purpose ...")
+		FetchContent_MakeAvailable(${WXWIDGETS_PROJECT_NAME})
+		FetchContent_GetProperties(${WXWIDGETS_PROJECT_NAME}
+			POPULATED ${WXWIDGETS_PROJECT_NAME}_POPULATED
+		)
 	endif()
 endif()
 FetchContent_GetProperties(
-		${WXWIDGETS_PROJECT_NAME}
-		SOURCE_DIR ${WXWIDGETS_PROJECT_NAME}_SOURCE_DIR
-		BINARY_DIR ${WXWIDGETS_PROJECT_NAME}_BINARY_DIR
-		POPULATED ${WXWIDGETS_PROJECT_NAME}_POPULATED
+	${WXWIDGETS_PROJECT_NAME}
+	SOURCE_DIR ${WXWIDGETS_PROJECT_NAME}_SOURCE_DIR
+	BINARY_DIR ${WXWIDGETS_PROJECT_NAME}_BINARY_DIR
 )
 if(NOT ${WXWIDGETS_PROJECT_NAME}_POPULATED)
-	### get wxwidget from github
-	MESSAGE(FATAL_ERROR "Required dependency ${WXWIDGETS_PROJECT_NAME} is neither found by find_package nor has been downloaded with FetchContent_MakeAvailable. Aborting configuration step.")
+	MESSAGE(FATAL_ERROR "Required dependency ${WXWIDGETS_PROJECT_NAME} is neither found by find_package nor has been downloaded with FetchContent_MakeAvailable.\n -- Aborting configuration step.")
 else()
 	MESSAGE(STATUS "Dependency ${WXWIDGETS_PROJECT_NAME} has been populated.")
 	if (${WXWIDGETS_PROJECT_NAME}_SOURCE_DIR)
@@ -68,7 +72,7 @@ else()
 			list(APPEND EXTRA_LINKS "${${WXWIDGETS_PROJECT_NAME}_LIBRARIES}")
 		endif()
 	else()
-		MESSAGE(STATUS "Dependency ${WXWIDGETS_PROJECT_NAME} was not found by find_package. Using brute-force build and linking of source files made available by FetchContent_MakeAvailable.")
+		MESSAGE(STATUS "Dependency ${WXWIDGETS_PROJECT_NAME} was not found by find_package.\n -- Using brute-force build and linking of source files made available by FetchContent_MakeAvailable.")
 		MESSAGE(STATUS "Adding ${WXWIDGETS_PROJECT_NAME} include directory '${${WXWIDGETS_PROJECT_NAME}_SOURCE_DIR}/include' to the target.")
 		list(APPEND EXTRA_INCLUDE_DIRS "${${WXWIDGETS_PROJECT_NAME}_SOURCE_DIR}/include")
 		if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
@@ -92,6 +96,6 @@ else()
 		endif()
 		MESSAGE(STATUS "Adding ${WXWIDGETS_PROJECT_NAME} library paths and linking libraries against the target.")
 		list(APPEND EXTRA_LIB_DIRS "${CMAKE_CURRENT_BINARY_DIR}/lib/${custom_wxCOMPILER_PREFIX}${custom_wxARCH_SUFFIX}_lib")
-		list(APPEND EXTRA_LINKS wxrichtext wxgl wxcore wxbase)
+		list(APPEND EXTRA_LINKS wxrichtext wxadv wxgl wxcore wxbase)
 	endif()
 endif()

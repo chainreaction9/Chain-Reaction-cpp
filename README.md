@@ -1,1 +1,1 @@
-# Chain-Reaction-cpp
+# Chain Reaction Android Game in C++.

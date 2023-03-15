@@ -12,34 +12,40 @@ set(ALSOFT_INSTALL_EXAMPLES OFF)
 set(ALSOFT_INSTALL_UTILS OFF)
 set(LIBTYPE STATIC)
 #############################################################
-
+find_package(${OPENAL_PROJECT_NAME} CONFIG
+	NAMES OpenAL OpenAL32
+)
+if (${OPENAL_PROJECT_NAME}_FOUND)
+	SET(${OPENAL_PROJECT_NAME}_POPULATED TRUE)
+endif()
 FetchContent_Declare(
 	${OPENAL_PROJECT_NAME}
+	USES_TERMINAL_DOWNLOAD TRUE
+	DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 	GIT_REPOSITORY "https://github.com/kcat/openal-soft.git"
 	GIT_TAG        "master"
-	FIND_PACKAGE_ARGS NAMES OpenAL OpenAL32 CONFIG
+	GIT_PROGRESS TRUE
 )
 # This will try calling find_package() first for dependencies. If the dependency is not found, then it will download the dependency from github and add it to the project for further build.
 MESSAGE(STATUS "Looking for dependency ${OPENAL_PROJECT_NAME} ...")
 if (OPENAL_AUTO_DOWNLOAD)
-	FetchContent_MakeAvailable(${OPENAL_PROJECT_NAME})
-else()
-	find_package(${OPENAL_PROJECT_NAME} CONFIG
-		NAMES OpenAL OpenAL32
-	)
-	if (${OPENAL_PROJECT_NAME}_FOUND)
-		SET(${OPENAL_PROJECT_NAME}_POPULATED TRUE)
+	MESSAGE(STATUS "OPENAL_AUTO_DOWNLOAD option is turned on. The dependency ${OPENAL_PROJECT_NAME} will be automatically downloaded if needed ...")
+	if (NOT ${OPENAL_PROJECT_NAME}_POPULATED)
+		MESSAGE(DEBUG "find_package could not locate dependency ${OPENAL_PROJECT_NAME} in config mode.\n -- The source files are being downloaded for build purpose ...")
+#		find_package(GIT REQUIRED)
+		FetchContent_MakeAvailable(${OPENAL_PROJECT_NAME})
+		FetchContent_GetProperties(${OPENAL_PROJECT_NAME}
+			POPULATED ${OPENAL_PROJECT_NAME}_POPULATED
+		)
 	endif()
 endif()
 FetchContent_GetProperties(
-		${OPENAL_PROJECT_NAME}
-		SOURCE_DIR ${OPENAL_PROJECT_NAME}_SOURCE_DIR
-		BINARY_DIR ${OPENAL_PROJECT_NAME}_BINARY_DIR
-		POPULATED ${OPENAL_PROJECT_NAME}_POPULATED
+	${OPENAL_PROJECT_NAME}
+	SOURCE_DIR ${OPENAL_PROJECT_NAME}_SOURCE_DIR
+	BINARY_DIR ${OPENAL_PROJECT_NAME}_BINARY_DIR
 )
 if(NOT ${OPENAL_PROJECT_NAME}_POPULATED)
-	### get wxwidget from github
-	MESSAGE(FATAL_ERROR "Required dependency ${OPENAL_PROJECT_NAME} is neither found by find_package nor has been downloaded with FetchContent_MakeAvailable. Aborting configuration step.")
+	MESSAGE(FATAL_ERROR "Required dependency ${OPENAL_PROJECT_NAME} is neither found by find_package nor has been downloaded with FetchContent_MakeAvailable.\n -- Aborting configuration step.")
 else()
 	MESSAGE(STATUS "Dependency ${OPENAL_PROJECT_NAME} has been populated.")
 	if (${OPENAL_PROJECT_NAME}_SOURCE_DIR)
@@ -77,11 +83,12 @@ else()
 			list(APPEND EXTRA_LINKS "${${OPENAL_PROJECT_NAME}_LIBRARIES}")
 		endif()
 	else()
-		MESSAGE(STATUS "Dependency ${OPENAL_PROJECT_NAME} was not found by find_package. Using brute-force build and linking of source files made available by FetchContent_MakeAvailable.")
+		MESSAGE(STATUS "Dependency ${OPENAL_PROJECT_NAME} was not found by find_package.\n -- Using brute-force build and linking of source files made available by FetchContent_MakeAvailable.")
 		MESSAGE(STATUS "Adding ${OPENAL_PROJECT_NAME} include directory '${${OPENAL_PROJECT_NAME}_SOURCE_DIR}/include' to the target.")
 		list(APPEND EXTRA_INCLUDE_DIRS "${${OPENAL_PROJECT_NAME}_SOURCE_DIR}/include")
 		MESSAGE(STATUS "Adding ${OPENAL_PROJECT_NAME} library paths and linking libraries against the target.")
-		list(APPEND EXTRA_LIB_DIRS "${${OPENAL_PROJECT_NAME}_BINARY_DIR}/lib")
+		list(APPEND EXTRA_LIB_DIRS "${CMAKE_CURRENT_BINARY_DIR}/lib")
+		list(APPEND EXTRA_LIB_DIRS "${${OPENAL_PROJECT_NAME}_BINARY_DIR}")
 		list(APPEND EXTRA_LINKS "OpenAL")
 	endif()
 endif()

@@ -6,6 +6,7 @@ Shaders::Shaders() : _programID(0), _VertexShader(""), _FragmentShader(""){
 }
 Shaders::~Shaders() {
 	if (_programID != 0) {
+		wxLogDebug(wxString::Format("[Chain-Reaction] Freed memory allocated to shader program %d at address %p ...", _programID, &_programID));
 		glDeleteProgram(_programID);
 	}
 }
@@ -131,23 +132,24 @@ bool Shaders::compileShaders(const char* VertSource, const char* FragSource, boo
 	glDeleteShader(_fragID);
 
 	this->_detectUniforms();
+	wxLogDebug(wxString::Format("[Chain-Reaction] Created shader program %d at address %p ...", _programID, &_programID));
 	return true;
 }
-bool Shaders::applyMaterial(objl::Material material){
+bool Shaders::applyMaterial(objl::Material material, const char* diffuseColorUniformName, const char* specularColorUniformName, const char* specularExponentUniformName){
 	if (!(this->_currentMaterial.name.compare(material.name))) return true;
 	bool success = false;
 	this->use();
-	GLint location = this->getUniformLocation("vDiffuse");
+	GLint location = this->getUniformLocation(diffuseColorUniformName);
 	if (location != -1) {
 		glUniform3f(location, material.Kd.X, material.Kd.Y, material.Kd.Z);
 		success = true;
 	}
-	location = this->getUniformLocation("vSpecular");
+	location = this->getUniformLocation(specularColorUniformName);
 	if (location != -1) {
 		glUniform3f(location, material.Ks.X, material.Ks.Y, material.Ks.Z);
 		success = true;
 	}
-	location = this->getUniformLocation("vSpecularExponent");
+	location = this->getUniformLocation(specularExponentUniformName);
 	if (location != -1) {
 		glUniform1f(location, material.Ns);
 		success = true;

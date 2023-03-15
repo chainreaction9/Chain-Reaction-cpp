@@ -35,7 +35,7 @@ bool AudioLoader::loadAudio(const char* filePath, uint8_t& channels, int32_t& sa
 		return false;
 	}
 }
-bool AudioLoader::loadAudioFromMemory(const BYTE* source, size_t rawDataSize, uint8_t& channels, int32_t& sampleRate, uint8_t& bitsPerSample, std::vector<uint8_t>& storageLocation, ALsizei& audioBufferSize) {
+bool AudioLoader::loadAudioFromMemory(const unsigned char* source, size_t rawDataSize, uint8_t& channels, int32_t& sampleRate, uint8_t& bitsPerSample, std::vector<uint8_t>& storageLocation, ALsizei& audioBufferSize) {
     std::vector<uint8_t> fileData;
     fileData.resize(rawDataSize);
     fileData.assign(source, source + rawDataSize);

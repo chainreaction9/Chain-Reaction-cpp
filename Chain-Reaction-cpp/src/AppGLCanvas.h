@@ -6,6 +6,7 @@
 #include "Text.h"
 #include "Utilities.h"
 #include "UvSphere.h"
+#include "IcoSphere.h"
 
 /*
 * @brief A class to obtain the OpenGL context in a wxGLCanvas. It is derived from the base class wxGLContext.
@@ -15,7 +16,7 @@ public:
 	/**
 	* @brief Default constructor of the AppGLContext class which creates OpenGL context for a wxGLCanvas instance.
 	* @param {wxGLCanvas*} canvas: pointer to a wxGLCanvas instance.
-	* @param[out] {bool} success a reference to boolean variable which is set to true on successful creation of an OpenGL context, false otherwise.
+	* @param[out] {bool&} success: a reference to boolean variable which is set to true on successful creation of an OpenGL context, false otherwise.
 	*/
 	AppGLContext(wxGLCanvas* canvas, bool& success);
 };
@@ -27,14 +28,26 @@ public:
 	/*
 	* @brief Default constructor of the AppGLCanvas class for creating OpenGL canvas instance.
 	* @param {wxWindow*} parent: pointer to the parent wxWidget.
+	* @param {wxSize*} size: default size of the canvas object.
 	* @param {int*} attribList: list of OpenGL attributes which is passed on to the wxGLCanvas constructor.
 	*/
-	AppGLCanvas(wxWindow* parent, int* attribList = NULL);
+	AppGLCanvas(wxWindow* parent, wxSize size = wxSize(1200, 1200), int* attribList = NULL);
 	/*
 	* @brief Resets the camera configurations (i.e., viewport, camera location, camera direction, lights, projection matrix, etc.)
 	* of the openGL context.
 	*/
 	void ApplyDefaultCameraSetup(void);
+	inline bool IsCanvasReadyForRendering(void) const { return (this->_isGlewInitialized && !(this->_isPendingResourceData)); }
+	/**
+	* @brief Initializes GLEW library.
+	* @returns {bool} true if GLEW is successfully initialized, false otherwise.
+	*/
+	bool InitGLEW();
+	/**
+	* @brief Initializes OpenGL context on this wxGLCanvas.
+	* @returns {bool} true if OpenGL context is successfully created, false otherwise.
+	*/
+	bool InitOpenGLContext();
 	/**
 	* @brief Handles IDLE events of AppGLCanvas instance and is responsible for maintaining communication between the main game loop
 	* @brief of the application and the GUI events of the canvas instance.
@@ -85,27 +98,31 @@ public:
 	inline glm::vec3 getGlCompatibleCoordinate(float radius, float latitudeDegree, float longitudeDegree) { return glm::vec3({ radius * sin(glm::radians(longitudeDegree)) * cos(glm::radians(latitudeDegree)), radius * sin(glm::radians(latitudeDegree)), radius * cos(glm::radians(longitudeDegree)) * cos(glm::radians(latitudeDegree)) }); }
 
 private:
+	int _angle = 0;
+	double _contentScalingFactor = 1.0;
+	bool _isGlewInitialized = false;
+	bool _isPendingResourceData = false;
 	bool _mouseCursorHidden = false;
 	int _mouseX = 0, _mouseY = 0;
 	float _currentMouseX = 0, _currentMouseY = 0;
 	float _cameraDistance = 30.0f;
-	//latitude (measured in degree) of the camera location.
-	float _cameraLatitude = 0;
-	//longitude (measured in degree) of the camera location.
-	float _cameraLongitude = 0;
+	float _cameraLatitude = 0; //latitude (measured in degree) of the camera location.
+	float _cameraLongitude = 0; //longitude (measured in degree) of the camera location.
 	glm::vec3 _cameraTarget = glm::vec3(0, 0, 0);
 	glm::vec3 _cameraUp = glm::vec3(0, 1, 0);
 	float _cameraRotationSpeed = 1.0f; //Speed (degree / mouse_increment / sec) at which camera rotates while dragging mouse pointer.
 	GLfloat _lightDirLatitude = -10.0f;
 	GLfloat _lightDirLongitude = 0.0f;
-	int _mNumParticle = 0;
+	unsigned int _mNumParticle = 0;
 	float _skyboxSize = 10.0f;
-	int _angle = 0;
 	UvSphere _sampleUvSphere;
+	IcoSphere _sampleIcoSphere;
 	wxLongLong _mBeginFrame = 0, _mLastFrame = 0;
-	const ResourceUtilities::ResourceData* _resourceData = nullptr;
+	ResourceUtilities::ResourceData _resourceData;
 	AppGLContext* _context = nullptr;
 	Shaders _textShader, _particleShader;
+	std::shared_ptr<Text> _textObject; //Pointer to the text object which is used for rendering 3D text.
+	std::unordered_map<std::string, MeshData*> _characterSet; //Map between name of the 26 alphabets and its mesh data. This is required as an argument for creating a Text object.
 	std::string _textShaderVertexSource = "#version 300 es\r\n\
 		layout(location=0) in vec3 vertexPosition;\r\n\
 		layout(location=1) in vec3 vertexNormal;\r\n\
@@ -182,29 +199,30 @@ private:
 		    vec3 color = clamp((modifiedDiffuseColor + specularComponent) * brightness, 0.0, 1.0);\r\n\
 		    outputColor = vec4( color , 1.0);\r\n\
 		}";
+	std::vector<GameUtilities::Particle> _particleData;
+
+	//**************************************** Private Method Declaractions **********************************
+	~AppGLCanvas(void);
 	void _applyTextShaderSettings(void);
 	void _applyParticleShaderSettings(void);
-	/*
-	* @brief Initializes default member variables of the OpenGL canvas instance and compiles generic shader elements.
-	*/
-	void _initDefaultVariables(void);
-	/*
-	* @brief Renders the default background at the start of the application.
-	*/
-	void _renderDefaultScene(void);
 	/*
 	* @brief Handles the main event loop in idle time.
 	*/
 	bool _finishIdleTask(unsigned long deltaTime);
 	/*
+	* @brief Initializes default member variables of the OpenGL canvas instance and compiles generic shader elements.
+	*/
+	void _initDefaultVariables(void);
+	bool _offlineGameLoop(GameUtilities::GameState* gameState, unsigned long deltaTime);
+	bool _processPendingResourceData(void);
+	/*
+	* @brief Renders the default background at the start of the application.
+	*/
+	void _renderDefaultScene(void);
+	/*
 	* @brief Simulates the random motion of brownian particles at each frame call.
 	*/
 	void _updateBrownianParticleMotion(void);
 	void _updateCameraView(void);
-	bool _offlineGameLoop(GameUtilities::GameState* gameState, unsigned long deltaTime);
-	std::vector<GameUtilities::Particle> _particleData;
-	~AppGLCanvas(void);
-
-	DECLARE_EVENT_TABLE();
 };
 #endif // !APP_GL_CANVAS_H

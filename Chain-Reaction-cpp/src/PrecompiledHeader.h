@@ -1,7 +1,8 @@
 #pragma once
-/* This file serves as a precompiled header for all the cpp files. It must be included in every cpp source file. */
-/* If a '.cpp' source file contains classes and other object definitions declared inside a header file, this file must be included 
-/* before the header file.*/
+/* This file serves as a precompiled header for all the cpp files. It must be included in every cpp source file. 
+ If a '.cpp' source file contains classes and other object definitions declared inside a header file, this file must be included 
+ before the header file.
+*/
 
 #ifndef _PRECOMPILED_H
 
@@ -112,6 +113,11 @@
 #include <wx/glcanvas.h>
 #define _WX_GLCANVAS_H
 #endif //!WX_GLCANVAS_H
+
+#ifndef WX_EVENTS_H
+#include <wx/event.h>
+#define WX_EVENTS_H
+#endif //!WX_MEMORY_STREAM_H
 
 #ifndef WX_MEMORY_STREAM_H
 #include <wx/mstream.h>

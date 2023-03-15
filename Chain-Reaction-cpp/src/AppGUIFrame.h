@@ -86,9 +86,7 @@ public:
 	*/
 	void OnButtonRegisterOnline(wxCommandEvent& event);
 	//An AppGLCanvas instance derived from the baseclass wxGLCanvas, which serves as the main canvas for OpenGL rendering.
-	AppGLCanvas *canvas_panel;
-	//An instance of wxMenu to display the current order of players in the game.
-	wxMenu *info_menu;
+	AppGLCanvas *canvas_panel = nullptr;
 
 private:
 	static const unsigned int _minimumNumberOfRows, _minimumNumberOfColumns, _maximumNumberOfRows, _maximumNumberOfColumns, _maximumNumberOfPlayers;

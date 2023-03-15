@@ -25,7 +25,7 @@ public:
 	* @param {size_t} size: size of the obj data in byte length.
 	* @returns {bool} true if the mesh data was loaded successfully, false otherwise.
 	*/
-	bool LoadFromMemory(const BYTE* source, size_t size);
+	bool LoadFromMemory(const unsigned char* source, size_t size);
 	/**
 	* @brief Loads .obj data from a source file.
 	* @brief Supports material processing.

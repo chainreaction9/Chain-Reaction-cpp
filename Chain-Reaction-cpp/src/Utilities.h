@@ -47,39 +47,40 @@ namespace VertexStructure {
 	} Vertex;
 }
 namespace ResourceUtilities {
+	/**
+	* @brief A struct object to store binary data of a file.
+	* @brief Members of the struct:
+	* @brief 1. {string} name: Name of the file associated with this data.
+	* @brief 2. {unsigned char*} data: a pointer to the raw binary data.
+	* @brief 3. {size_t} size: size of the data in bytes.
+	*/
+	typedef struct FileData {
+		std::string name; // Name of the file
+		unsigned char* data; // Pointer to the raw binary data.
+		size_t size; // Size of the data in byte lengths.
+		FileData() : name(""), data(nullptr), size(0) {};
+	} FileData;
 	/*
-	* @brief A structure for storing resource data (e.g., text object, default material properties etc.)
-	* which can be passed on to the canvas object for further processing.
+	* @brief A structure for storing resource data (e.g., 3d object, default material properties etc.)
+	* which can be passed on to an OpenGL canvas object for further processing.
 	* @brief Member of the struct:
-	* @brief 1. {const Text*} textObject: a pointer to Text object which can be used for text rendering.
-	* @brief 2. {Material} defaultSphereMaterial: a Material object to specify default material properties in case a mesh data does not contain any.
-	* @brief 3. {const char*} particleShaderVertexSource: raw source code of the vertex shader for rendering the brownian particles. If none is given, a hard-coded default shader is used.
-	* @brief 4. {const char*} particleShaderFragmentSource: raw source code of the fragment shader for rendering the brownian particles. If none is given, a hard-coded default shader is used.
-	* @brief 5. {const char*} textShaderVertexSource: raw source code of the vertex shader for rendering 3D text objects. If none is given, a hard-coded default shader is used.
-	* @brief 6. {const char*} textShaderFragmentSource: raw source code of the fragment shader for rendering 3D text objects. If none is given, a hard-coded default shader is used.
+	* @brief 1. {std::vector<FileData*>} listOfObjectFiles: list containing object data of 3D models for further processing.
+	* @brief 2. {std::unordered_map<std::string, objl::Material>} listOfAllAvailableMaterials: list containing all available materials that can be used to render a 3D model.
+	* @brief 3. {Material} defaultSphereMaterial: a Material object to specify default material properties in case a mesh data does not contain any.
+	* @brief 4. {const char*} particleShaderVertexSource: raw source code of the vertex shader for rendering the brownian particles. If none is given, a hard-coded default shader is used.
+	* @brief 5. {const char*} particleShaderFragmentSource: raw source code of the fragment shader for rendering the brownian particles. If none is given, a hard-coded default shader is used.
+	* @brief 6. {const char*} textShaderVertexSource: raw source code of the vertex shader for rendering 3D text objects. If none is given, a hard-coded default shader is used.
+	* @brief 7. {const char*} textShaderFragmentSource: raw source code of the fragment shader for rendering 3D text objects. If none is given, a hard-coded default shader is used.
 	*/
 	typedef struct ResourceData {
-		const Text* textObject; // Text object for rendering text
+		std::vector<FileData*> listOfObjectFiles;
+		std::unordered_map<std::string, objl::Material> listOfAllAvailableMaterials;
 		objl::Material defaultSphereMaterial; //Default material used for rendering brownian particles.
 		const char* particleShaderVertexSource = nullptr;
 		const char* particleShaderFragmentSource = nullptr;
 		const char* textShaderVertexSource = nullptr;
 		const char* textShaderFragmentSource = nullptr;
-		ResourceData() : textObject(nullptr) {}
 	} ResourceData;
-	/**
-	* @brief A struct object to store binary data of a file.
-	* @brief Members of the struct:
-	* @brief 1. {string} name: Name of the file associated with this data.
-	* @brief 2. {BYTE*} data: a pointer to the raw binary data.
-	* @brief 3. {size_t} size: size of the data in bytes.
-	*/
-	typedef struct FileData {
-		std::string name; // Name of the file
-		BYTE* data; // Pointer to the raw binary data.
-		size_t size; // Size of the data in byte lengths.
-		FileData() : name(""), data(nullptr), size(0) {};
-	} FileData;
 	/*
 	* @brief Extracts zip source contained in rawData to the storageLocation.
 	* @param {const void *} rawData: A pointer to the raw data that is stored in memory.

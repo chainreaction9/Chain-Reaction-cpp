@@ -10,7 +10,7 @@
 #include "IndexBufferObject.h"
 #include "VertexLayout.h"
 #include "Shaders.h"
-#include "UvSphere.h"
+#include "IcoSphere.h"
 #include "Utilities.h"
 #include "AudioFile.h"
 #include "SoundSystem.h"
@@ -32,6 +32,8 @@ public:
 	glm::vec2 getBoardCoordinates(double mouseX, double mouseY);
 	inline AppGUIFrame* getFrame() const { return this->_mainframe; }
 	inline glm::vec3 getGlCompatibleCoordinate(float radius, float latitudeDegree, float longitudeDegree) const { return glm::vec3({ radius * sin(glm::radians(longitudeDegree)) * cos(glm::radians(latitudeDegree)), radius * sin(glm::radians(latitudeDegree)), radius * cos(glm::radians(longitudeDegree)) * cos(glm::radians(latitudeDegree)) }); }
+	inline unsigned int getWinnerIndex() const { return this->_winnerIndex; }
+	inline const char* getWinnerName() const { return this->_winnerName.c_str(); }
 	inline bool isBlastAnimationRunning() const { return this->_blastAnimationRunning; }
 	/*
 	* @brief Checks whether or not a given player is eliminated from the game.
@@ -92,6 +94,7 @@ public:
 	* @param {unsigned int} height: height of the canvas.
 	*/
 	void setCanvasSize(unsigned int width, unsigned int height);
+	inline void setPixelScaling(double correctionFactor) {this->_pixelCorrectionFactor = correctionFactor;}
 	/**
 	* @brief Sets the frame object (which handles graphical user inputs) of the game instance.
 	* @param {AppGUIFrame*} frame: pointer to the frame object.
@@ -117,6 +120,7 @@ private:
 	//*********************** Declaration of private member variables *************************
 	double _angleOfRotation;
 	ALuint _audioID, _audioSourceID;
+	bool _areShadersInitialized = false;
 	std::unordered_map<GameUtilities::BoardKey, GameUtilities::BoardValue> _BOARD;
 	bool _blastAnimationRunning;
 	double _blastDisplacement;
@@ -131,6 +135,7 @@ private:
 	std::vector<std::pair<GameUtilities::BoardKey, GameUtilities::BoardValue>> _currentBombs;
 	unsigned int _DISPLAY[2]; //Stores the current dimension of the OpenGL canvas.
 	std::vector<std::string> _eliminated; //Stores the colors (in lowercase) of the elminiated players.
+	bool _gameHasEnded = false;
 	IndexBufferObject _GRID_IBO_ID[5][5]; //Stores index_buffer_object for (row, col) grid data. Row and col range from 6 to 10, index 0 maps to 6.
 	//Default fragment shader for rendering grid lines in the game board.
 	std::string _gridShaderFragmentSource = "#version 400\r\n"
@@ -198,17 +203,23 @@ private:
 		"	gl_Position = projectionView * vPosition;\r\n"
 		"	normalWorld = normalize(vec3(modelTransform * vec4(vertexNormal, 0)));\r\n"
 		"}";
+	double _pixelCorrectionFactor = 1.0;
 	std::vector<std::string> _players; //List of colors (in lowercase) of the current players.
 	glm::mat4 _projection; //Stores the current projection (i.e., perspective) matrix.
 	unsigned int _ROTATION_SPEED, _ROW_DIV;
-	UvSphere _sphere;
+	//UvSphere _sphere;
+	IcoSphere _sphere;
 	const MeshData* _sphereMeshData;
 	unsigned int _turn;
 	std::unordered_map<GameUtilities::BoardKey, GameUtilities::BoardValue> _undoBoard; //Stores the game-board configuration before the last input.
 	std::vector<std::string> _undoEliminated; //Stores the list of (colors in lowercase) players that were eliminated before the last input.
 	unsigned int _undoTurn; //Stores the value of the turn variable before the last input.
+	unsigned int _winnerIndex = 0;
+	std::string _winnerName = "";
+
 	//******************************************* Private Method declaraction ******************************
-	static std::unordered_map<std::string, glm::vec4> _createColorMap();
+	void _applyGridShaderSettings(void);
+	void _applyOrbShaderSettings(void);
 	/*
 	* @brief Cantor pairing function to map (injectively) two 32 bit positive intergers to a single 64 bit positive integer.
 	* @brief It can be used as a hash function to encode two positive integers into a single positive integer.
@@ -216,7 +227,17 @@ private:
 	* @param {unsigned int} i, j : input value of the two positive integers.
 	* @returns {unsigned long long} output value obtained from Cantor pairing.
 	*/
-	inline uint64_t _boardKey(uint32_t i, uint32_t j) const { return (uint64_t) (0.5 * (i+j) * (i + j + 1) + j); }
+	inline uint64_t _boardKey(uint32_t i, uint32_t j) const { return (uint64_t)(0.5 * (i + j) * (i + j + 1) + j); }
+	static std::unordered_map<std::string, glm::vec4> _createColorMap();
+	void _createGridData(unsigned int numberOfRows, unsigned int numberOfColumns, VertexArrayObject* vao, VertexBufferObject* vbo, IndexBufferObject* ibo, unsigned int cubeWidth, unsigned int centerX = 0, unsigned int centerY = 0);
+	void _drawGrid();
+	void _drawOrb(glm::vec3 center, glm::vec3 axes, double angleOfRotation, unsigned int level, const char* colorName);
+	void _eliminatePlayers(bool updateTurnVariable);
+	void _getWorldCoordinates(double x, double y, double& worldCoordinateX, double& worldCoordinateY, double& worldCoordinateZ);
+	std::set<std::pair<uint32_t, uint32_t> > _getNeighbours(uint32_t boardCoordinateX, uint32_t boardCoordinateY);
+	std::vector<std::pair<GameUtilities::BoardKey, GameUtilities::BoardValue>> _getBombs(const std::unordered_map<GameUtilities::BoardKey, GameUtilities::BoardValue>& board);
+	std::unordered_map<GameUtilities::BoardKey, uint32_t> _getBombNeighbours();
+	void _initDefaults(void);
 	/**
 	* @brief Inverse of the Cantor pairing function to map (injectively) a single 64 bit positive integer to two 32 bit positive intergers.
 	* @see MainGame::_boardKey
@@ -230,17 +251,6 @@ private:
 		const uint32_t x = w - y;
 		return std::make_pair(x, y);
 	}
-	void _initDefaults(void);
-	void _applyGridShaderSettings(void);
-	void _applyOrbShaderSettings(void);
-	void _drawGrid();
-	void _drawOrb(glm::vec3 center, glm::vec3 axes, double angleOfRotation, unsigned int level, const char* colorName);
-	void _eliminatePlayers(bool updateTurnVariable);
-	glm::vec3 _getWorldCoordinates(double x, double y);
-	std::set<std::pair<uint32_t, uint32_t> > _getNeighbours(uint32_t boardCoordinateX, uint32_t boardCoordinateY);
-	std::vector<std::pair<GameUtilities::BoardKey, GameUtilities::BoardValue>> _getBombs(const std::unordered_map<GameUtilities::BoardKey, GameUtilities::BoardValue>& board);
-	std::unordered_map<GameUtilities::BoardKey, uint32_t> _getBombNeighbours();
-	void _createGridData(unsigned int numberOfRows, unsigned int numberOfColumns, VertexArrayObject* vao, VertexBufferObject* vbo, IndexBufferObject* ibo, unsigned int cubeWidth, unsigned int centerX = 0, unsigned int centerY = 0);
 	/**
 	* @brief Performs animation of an explosion if there are any.
 	* @param {unsigned long} delta_t: average time (in miliseconds) taken to render each frame.

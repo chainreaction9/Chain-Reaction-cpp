@@ -25,6 +25,9 @@ list(APPEND SOURCE_FILES "src/AppGLCanvas.cpp")
 list(APPEND SOURCE_FILES "src/AppGUIFrame.cpp")
 list(APPEND SOURCE_FILES "src/AudioFile.h")
 list(APPEND SOURCE_FILES "src/AudioLoader.cpp")
+if (NOT WIN32)
+	list(APPEND SOURCE_FILES "src/icon.xpm")
+endif()
 list(APPEND SOURCE_FILES "src/IcoSphere.cpp")
 list(APPEND SOURCE_FILES "src/IndexBufferObject.cpp")
 list(APPEND SOURCE_FILES "src/InputDialogs.cpp")
@@ -60,9 +63,3 @@ install(TARGETS ${TARGET_NAME}
 install(TARGETS ${TARGET_NAME}
         CONFIGURATIONS Release
         RUNTIME DESTINATION bin/Release)
-install(TARGETS ${TARGET_NAME}
-        CONFIGURATIONS RelWithDebInfo
-        RUNTIME DESTINATION bin/RelWithDebInfo)
-install(TARGETS ${TARGET_NAME}
-        CONFIGURATIONS MinSizeRel
-        RUNTIME DESTINATION bin/MinSizeRel)

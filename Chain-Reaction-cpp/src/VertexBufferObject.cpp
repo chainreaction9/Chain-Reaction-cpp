@@ -7,9 +7,11 @@ VertexBufferObject::VertexBufferObject(const void* data, unsigned int size) : _v
 	glBindBuffer(GL_ARRAY_BUFFER, _vboID);
 	glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
 	_size = size;
+	wxLogDebug(wxString::Format("[Chain-Reaction] Created OpenGL vertex buffer %d at address %p ...", _vboID, &_vboID));
 }
 VertexBufferObject::~VertexBufferObject() {
 	if (_vboID != 0) {
+		wxLogDebug(wxString::Format("[Chain-Reaction] Freed memory allocated to OpenGL vertex buffer %d at address %p ...", _vboID, &_vboID));
 		glDeleteBuffers(1, &_vboID);
 	}
 }

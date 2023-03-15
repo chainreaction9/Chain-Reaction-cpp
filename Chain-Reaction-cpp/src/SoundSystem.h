@@ -36,7 +36,12 @@ public:
 	* @brief A static method which initiates the default sound device of the system.
 	* @returns true if audio system was successfully initialized, false otherwise.
 	*/
-	static bool initSystem(); 
+	static bool initSystem();
+	/*
+	* @brief Returns the name of the currently used sound device.
+	* @returns {std::string} name of the currently used sound device if the audio system is initialized, empty string otherwise.
+	*/
+	inline static std::string getDeviceName() { return SoundSystem::_deviceName; }
 	/**
 	* @brief A static method which shuts down (if already initialized) the default sound device of the system and free all audio resources (e.g., audio buffer etc.).
 	* @returns true if audio system was successfully shut down and all memories allocated to audio resources were freed, false otherwise.
@@ -51,11 +56,11 @@ public:
 	static ALuint addAudioData(const char* fileName);
 	/**
 	* @brief Uploads audio buffer (supported audio format: .wav, .ogg, etc.) contained in `source` to the device memory associated with the current OpenAL context.
-	* @param {const BYTE*} source: pointer to the audio buffer that is to be uploaded.
+	* @param {const unsigned char*} source: pointer to the audio buffer that is to be uploaded.
 	* @param {size_t} size: size of the buffer source (in byte length).
 	* @returns {ALuint} location ID of the uploaded audio buffer which is stored in the audio device.
 	*/
-	static ALuint addAudioDataFromMemory(const BYTE* source, size_t size);
+	static ALuint addAudioDataFromMemory(const unsigned char* source, size_t size);
 	/**
 	* @brief Deletes previously uploaded audio buffer from the audio device memory.
 	* @param {const ALuint&} bufferID: location ID of the audio buffer that is to be deleted.
@@ -110,6 +115,7 @@ private:
 	SoundSystem(); //The constructor is made private to prevent instantiating this class.
 	static bool _systemInitialized; // A boolean flag to indicate whether the audio system is sucessfully initialized.
 	static ALCdevice* _deviceHandle; //Stores device handle for the default sound device. For multiple devices, a list is suitable.
+	static std::string _deviceName; //Stores name of the currently used sound device.
 	static ALCcontext* _currentContext; //Stores the current context. We only deal with a single context here. Each context has a uniquely assigned device. A device can have multiple contexts.
 	/**
 	* @brief A method to upload audioBuffer in a sound device.

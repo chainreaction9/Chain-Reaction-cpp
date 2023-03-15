@@ -1,0 +1,13 @@
+/*************************************************************************************************
+********************* Fragment shader for rendering grid-lines on the game board *****************
+*/
+#version 300 es
+precision highp float;
+precision highp int;
+in vec4 fragmentColor;
+out vec4 color;
+uniform vec4 backsideColor;
+uniform vec4 frontsideColor;
+void main() {
+	color = clamp(fragmentColor.r * backsideColor + (1.0f - fragmentColor.r) * frontsideColor, 0.0f, 1.0f);
+}

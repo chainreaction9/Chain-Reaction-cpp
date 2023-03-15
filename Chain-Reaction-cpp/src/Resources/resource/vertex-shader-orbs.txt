@@ -1,0 +1,19 @@
+/*********************************************************************************
+********************* Vertex shader for rendering 3D orbs ************************
+*/
+#version 300 es
+precision highp float;
+precision highp int;
+layout(location = 0) in vec3 vertexPosition;
+layout(location = 1) in vec3 vertexNormal;
+layout(location = 2) in vec2 texCoord; //Texture coordinates are not used for now.
+layout(location = 3) in vec4 vertexColor;
+out vec3 normalWorld;
+out vec4 vPosition;
+uniform mat4 projectionView;
+uniform mat4 modelTransform;
+void main() {
+	vPosition = modelTransform * vec4(vertexPosition, 1.0f);
+	gl_Position = projectionView * vPosition;
+	normalWorld = normalize(vec3(modelTransform * vec4(vertexNormal, 0)));
+}

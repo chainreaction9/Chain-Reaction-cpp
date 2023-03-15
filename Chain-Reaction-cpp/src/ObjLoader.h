@@ -718,7 +718,7 @@ namespace objl{
 		* @param size: size of the obj data in byte length.
 		* @return true on successful object processing, false otherwise.
 		*/
-		bool LoadFromMemory(const BYTE *rawData, size_t size) {
+		bool LoadFromMemory(const unsigned char* rawData, size_t size) {
 			std::istringstream rawStream(std::string(rawData, rawData + size));
 			LoadedMeshes.clear();
 			LoadedVertices.clear();
@@ -1000,7 +1000,7 @@ namespace objl{
 		* @param storageLocation: a container where newly parsed material data <objl::Material> is stored.
 		* @return true on successful material processing, false otherwise.
 		*/
-		bool static LoadMaterialsFromMemory(const BYTE* rawData, size_t size, std::unordered_map<std::string, objl::Material>& storageLocation) {
+		bool static LoadMaterialsFromMemory(const unsigned char* rawData, size_t size, std::unordered_map<std::string, objl::Material>& storageLocation) {
 			std::istringstream rawStream(std::string(rawData, rawData + size));
 			Material tempMaterial;
 			int materialProcessed = 0;

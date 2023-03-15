@@ -7,9 +7,11 @@ IndexBufferObject::IndexBufferObject(const GLuint* data, unsigned int count) : _
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _iboID);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(GLuint), (const void *) data, GL_STATIC_DRAW);
 	_count = count;
+	wxLogDebug(wxString::Format("[Chain-Reaction] Created OpenGL index buffer %d at address %p ...", _iboID, &_iboID));
 }
 IndexBufferObject::~IndexBufferObject() {
 	if (_iboID != 0) {
+		wxLogDebug(wxString::Format("[Chain-Reaction] Freed memory allocated to OpenGL index buffer %d at address %p ...", _iboID, &_iboID));
 		glDeleteBuffers(1, &_iboID);
 	}
 }

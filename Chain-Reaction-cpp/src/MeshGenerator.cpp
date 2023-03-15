@@ -6,6 +6,7 @@ MeshData::MeshData() {
 }
 MeshData::~MeshData() {
 	for (auto entry : this->_meshList) {
+		wxLogDebug(wxString::Format("[Chain-Reaction] Freeing GPU memory allocated to Mesh object %p ...", entry));
 		delete entry;
 	}
 	this->_meshList.clear();
@@ -52,7 +53,7 @@ bool MeshData::LoadFromFile(const char* fileName) {
 	}
 	return false;
 }
-bool MeshData::LoadFromMemory(const BYTE* source, size_t size) {
+bool MeshData::LoadFromMemory(const unsigned char* source, size_t size) {
 	bool success = this->_objLoader.LoadFromMemory(source, size);
 	if (success) {
 		for (const auto& rawEntry : this->_objLoader.LoadedMeshes) {

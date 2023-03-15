@@ -13,13 +13,13 @@ class Random{
 			static int SEED_DEFINED = 0;
 			if (!SEED_DEFINED) set_seed(&SEED_DEFINED);
 			double len = b - a;
-			double val = (double) rand()/(RAND_MAX + 1) * len + a;
+			double val = (double) rand()/(RAND_MAX) * len + a;
 			return val;
 		}
 	private:
 		static double init_random(double a, double b){
 			double len = b - a;
-			double val = (double) rand()/(RAND_MAX + 1) * len + a;
+			double val = (double) rand()/(RAND_MAX) * len + a;
 			return val;
 		};
 

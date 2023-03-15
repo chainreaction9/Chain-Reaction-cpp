@@ -3,9 +3,11 @@
 
 VertexArrayObject::VertexArrayObject(): _vaoID(0), _numAttributes(1), _numIndices(0) {
 	glGenVertexArrays(1, &_vaoID);
+	wxLogDebug(wxString::Format("[Chain-Reaction] Created OpenGL vertex array %d at address %p ...", _vaoID, &_vaoID));
 }
 VertexArrayObject::~VertexArrayObject() {
 	if (_vaoID != 0) {
+		wxLogDebug(wxString::Format("[Chain-Reaction] Freed memory allocated to OpenGL vertex array %d at address %p ...", _vaoID, &_vaoID));
 		glDeleteVertexArrays(1, &_vaoID);
 	}
 }

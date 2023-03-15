@@ -32,17 +32,22 @@ bool MainGame::drawBoard(unsigned long deltaTime) {
 		}
 		if (!(this->_BOARD.empty())) this->_angleOfRotation += ((this->_ROTATION_SPEED * deltaTime) / 1000.0);
 	}
-	if (gameHasEnded) this->resetGameVariables();
+	if (gameHasEnded){
+		this->resetGameVariables();
+	}
 	return gameHasEnded;
 }
 glm::vec2 MainGame::getBoardCoordinates(double mouseX, double mouseY) {
 	glm::vec2 output = { -1, -1 };
-	glm::vec3 worldCoordinates = this->_getWorldCoordinates(mouseX, mouseY);
-	if ((fabs(worldCoordinates[0]) > 0.5 * (this->_COL_DIV) * (this->_CUBE_WIDTH)) || (fabs(worldCoordinates[1]) > 0.5 * (this->_ROW_DIV) * (this->_CUBE_WIDTH))) {
+	double worldCoordinatesX = 0;
+	double worldCoordinatesY = 0;
+	double worldCoordinatesZ = 0;
+	this->_getWorldCoordinates(mouseX, mouseY, worldCoordinatesX, worldCoordinatesY, worldCoordinatesZ);
+	if ((fabs(worldCoordinatesX) > 0.5 * (this->_COL_DIV) * (this->_CUBE_WIDTH)) || (fabs(worldCoordinatesY) > 0.5 * (this->_ROW_DIV) * (this->_CUBE_WIDTH))) {
 		return output; //The input falls outside the grid. Return negative output.
 	}
-	int boxx = (int)((worldCoordinates[0] - (this->_lowerleft[0])) / (this->_CUBE_WIDTH));
-	int boxy = (int)((worldCoordinates[1] - (this->_lowerleft[1])) / (this->_CUBE_WIDTH));
+	int boxx = (int)((worldCoordinatesX - this->_lowerleft[0]) / (this->_CUBE_WIDTH));
+	int boxy = (int)((worldCoordinatesY - this->_lowerleft[1]) / (this->_CUBE_WIDTH));
 	output.x = boxx;
 	output.y = boxy;
 	return output;
@@ -79,10 +84,14 @@ MainGame::MainGame(const void *soundSource, size_t size, const char* gridShaderV
 }
 MainGame::~MainGame(void) {
 	this->resetGameVariables();
-	for (auto entry : this->_GRID_VAO_ID) {
-		delete entry.second;
+	if (!this->_GRID_VAO_ID.empty()) {
+		wxLogDebug("[Chain-Reaction] Freeing memory allocated to vertex array object for grid-lines ...");
+		for (auto entry : this->_GRID_VAO_ID) {
+			wxLogDebug(wxString::Format("[Chain-Reaction] Freeing vertex array object for grid-lines at %p ...", entry.second));
+			delete entry.second;
+		}
+		this->_GRID_VAO_ID.clear();
 	}
-	this->_GRID_VAO_ID.clear();
 }
 bool MainGame::processPlayerInput(uint32_t boardCoordinateX, uint32_t boardCoordinateY) {
 	if (this->isBlastAnimationRunning()) return false; //Current board has bombs which needs to be taken care of before processing any input.
@@ -128,6 +137,7 @@ void MainGame::resetGameVariables(void) {
 	this->_angleOfRotation = 0.0;
 	this->_blastAnimationRunning = false;
 	this->_blastDisplacement = 0.0;
+	this->_gameHasEnded = false;
 }
 void MainGame::setAttribute(unsigned int numberOfRows, unsigned int numberOfColumns, const std::vector<std::string>& playerList) {
 	this->_ROW_DIV = numberOfRows;
@@ -157,7 +167,7 @@ void MainGame::setFrame(AppGUIFrame* frame){
 	this->_mainframe = frame;
 }
 void MainGame::setupCamera() {
-	glViewport(0, 0, this->_DISPLAY[0], this->_DISPLAY[1]);
+	glViewport(0, 0, (int) this->_pixelCorrectionFactor * this->_DISPLAY[0], (int) this->_pixelCorrectionFactor * this->_DISPLAY[1]);
 	double cameraDistance = glm::length(this->_cameraTarget - this->_cameraPosition); //Distance between camera and target
 	double focusHeight = 0.5 * (this->_ROW_DIV) * (this->_CUBE_WIDTH);
 	double calibratedDistance = cameraDistance - this->_CUBE_WIDTH; //Zoom out the camera to avoid rendering near the screen edges.
@@ -168,7 +178,16 @@ void MainGame::setupCamera() {
 
 	this->_projection = projection;
 	this->_modelview = view;
-
+	if (!this->_areShadersInitialized) {
+		wxLogDebug("[Chain-Reaction] Initializing default variables and uploading vertex data to GPU for rendering orbs ...");
+		float radius = (this->_CUBE_WIDTH) / 4.5f;
+		this->_sphere.init(glm::vec3(0, 0, 0), radius, 4);
+		wxLogDebug("[Chain-Reaction] Processing shader-settings for rendering orbs ...");
+		this->_applyOrbShaderSettings();
+		wxLogDebug("[Chain-Reaction] Processing shader-settings for rendering grid-lines ...");
+		this->_applyGridShaderSettings();
+		this->_areShadersInitialized = true;
+	}
 	GLint location = _gridShaderProgram.getUniformLocation("transform");
 	this->_gridShaderProgram.use();
 	if (location != -1) glUniformMatrix4fv(location, 1, GL_FALSE, &final_mat[0][0]);
@@ -201,10 +220,14 @@ void MainGame::updateTurn(void){
 void MainGame::_applyGridShaderSettings(void) {
 	//***************************************************************************
 	//**************************************  Grid-data setup *******************
-	VertexArrayObject* vao = new VertexArrayObject();
-	this->_createGridData(this->_ROW_DIV, this->_COL_DIV, vao, &this->_GRID_VBO_ID[this->_ROW_DIV - 6][this->_COL_DIV - 6], &this->_GRID_IBO_ID[this->_ROW_DIV - 6][this->_COL_DIV - 6], this->_CUBE_WIDTH);
 	const auto& key = (GameUtilities::BoardKey)this->_boardKey(this->_ROW_DIV, this->_COL_DIV);
-	this->_GRID_VAO_ID[key] = vao;
+	if (!this->_GRID_VAO_ID.count(key)) {
+		VertexArrayObject* vao = new VertexArrayObject();
+		this->_createGridData(this->_ROW_DIV, this->_COL_DIV, vao, &this->_GRID_VBO_ID[this->_ROW_DIV - 6][this->_COL_DIV - 6], &this->_GRID_IBO_ID[this->_ROW_DIV - 6][this->_COL_DIV - 6], this->_CUBE_WIDTH);
+		this->_GRID_VAO_ID[key] = vao;
+		wxLogDebug(wxString::Format("[Chain-Reaction] Created vertex array object for grid-lines at %p ...", vao));
+	}
+	wxLogDebug("[Chain-Reaction] Compiling shaders for rendering grid-lines ...");
 	this->_gridShaderProgram.compileShaders(this->_gridShaderVertexSource.c_str(), this->_gridShaderFragmentSource.c_str(), true);
 	glm::mat4 defaultMatrix = glm::mat4(1.0f);
 	this->_gridShaderProgram.use();
@@ -219,11 +242,12 @@ void MainGame::_applyGridShaderSettings(void) {
 void MainGame::_applyOrbShaderSettings(void) {
 	//******************************************************************************************************
 	//****************************  Particle-data setup *****************************************************
+	wxLogDebug("[Chain-Reaction] Compiling shader for rendering orbs ...");
 	this->_orbShaderProgram.compileShaders(this->_orbShaderVertexSource.c_str(), this->_orbShaderFragmentSource.c_str(), true);
 	this->_orbShaderProgram.use();
 	//Update orbColor uniform variable
 	GLint location = this->_orbShaderProgram.getUniformLocation("orbColor");
-	GLfloat defaultOrbColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	GLfloat defaultOrbColor[] = { 1.0f, 0.0f, 1.0f, 1.0f };
 	if (location != -1) glUniform4fv(location, 1, defaultOrbColor);
 	//***********************************************************
 	//Update uniform variable (modelview matrix) in shader
@@ -252,8 +276,8 @@ void MainGame::_applyOrbShaderSettings(void) {
 	location = this->_orbShaderProgram.getUniformLocation("vSpecular");
 	if (location != -1) glUniform3f(location, 1.0f, 1.0f, 1.0f);
 	//************************************************************************
-	//Update uniform variable (vSpecularExponent) in shader
-	location = this->_orbShaderProgram.getUniformLocation("vSpecularExponent");
+	//Update uniform variable (vSpExp) in shader
+	location = this->_orbShaderProgram.getUniformLocation("vSpExp");
 	if (location != -1) glUniform1f(location, 233.3333f);
 	//******************************************************************************
 	this->_orbShaderProgram.unuse();
@@ -269,7 +293,7 @@ std::unordered_map<std::string, glm::vec4> MainGame::_createColorMap() {
 	colorMap["orange"] = { 1.0f, 0.27f, 0.0f, 1.0f };
 	colorMap["pink"] = { 1.0f, 0.412f, 0.706f, 1.0f };
 	colorMap["red"] = { 1.0f, 0.0f, 0.0f, 1.0f };
-	colorMap["blue"] = { 0.1f, 0.3f, 11.0f, 1.0f };
+	colorMap["blue"] = { 0.1f, 0.3f, 1.0f, 1.0f };
 	colorMap["green"] = { 0.0f, 1.0f, 0.0f, 1.0f };
 	colorMap["yellow"] = { 1.0f, 1.0f, 0.0f, 1.0f };
 	colorMap["cyan"] = { 0.0f, 1.0f, 1.0f, 1.0f };
@@ -344,7 +368,8 @@ void MainGame::_drawGrid(){
 void MainGame::_drawOrb(glm::vec3 center, glm::vec3 axes, double angleOfRotation, unsigned int level, const char* colorName) {
 	this->_orbShaderProgram.use();
 	glm::mat4 _model = glm::mat4(1.0f);
-	if (this->_sphere.getColor() != colorName) {
+	std::string currentColorName = this->_sphere.getColor();
+	if (std::strcmp(currentColorName.c_str(), colorName)) {
 		this->_sphere.setColor(colorName);
 		const auto& color = MainGame::_colorMap.at(colorName);
 		GLint location = this->_orbShaderProgram.getUniformLocation("orbColor");
@@ -409,7 +434,7 @@ std::unordered_map<GameUtilities::BoardKey, uint32_t> MainGame::_getBombNeighbou
 	std::unordered_map<GameUtilities::BoardKey, uint32_t> allNeighbours;
 	for (const auto& bomb : this->_currentBombs) {
 		const auto& boxCoordinate = bomb.second.boardCoordinate;
-		const std::set<std::pair<uint32_t, uint32_t> >& listOfNeighbours = this->_getNeighbours(bomb.second.boardCoordinate.first, bomb.second.boardCoordinate.second);
+		const std::set<std::pair<uint32_t, uint32_t> >& listOfNeighbours = this->_getNeighbours(boxCoordinate.first, boxCoordinate.second);
 		for (const auto& neighbour : listOfNeighbours) {
 			const auto& key = (GameUtilities::BoardKey)this->_boardKey(neighbour.first, neighbour.second);
 			if (!allNeighbours.count(key)) allNeighbours[key] = 1;
@@ -426,15 +451,17 @@ std::set<std::pair<uint32_t, uint32_t> > MainGame::_getNeighbours(uint32_t board
 	if (boardCoordinateY >= 1) neighbours.insert(std::make_pair(boardCoordinateX, boardCoordinateY - 1));
 	return neighbours;
 }
-glm::vec3 MainGame::_getWorldCoordinates(double x, double y) {
+void MainGame::_getWorldCoordinates(double x, double y, double& worldCoordinateX, double& worldCoordinateY, double& worldCoordinateZ){
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	glm::vec4 currentViewport = glm::vec4(viewport[0], viewport[1], viewport[2], viewport[3]);
-	glm::vec3 objectLocation = glm::vec3(this->_lowerleft[0], this->_lowerleft[1], 0.5 * (this->_CUBE_WIDTH));
+	glm::vec3 objectLocation = glm::vec3((double) this->_lowerleft[0] * this->_pixelCorrectionFactor, (double) this->_lowerleft[1] * this->_pixelCorrectionFactor, 0);
 	glm::vec3 output = glm::project(objectLocation, this->_modelview, this->_projection, currentViewport);
-	glm::vec3 windowLocation = glm::vec3(x, (double)this->_DISPLAY[1] - y, output.z);
+	glm::vec3 windowLocation = glm::vec3((double) x * this->_pixelCorrectionFactor, (double)(this->_DISPLAY[1] - y) * this->_pixelCorrectionFactor, output.z);
 	output = glm::unProject(windowLocation, this->_modelview, this->_projection, currentViewport);
-	return output;
+	worldCoordinateX = output.x;
+	worldCoordinateY = output.y;
+	worldCoordinateZ = output.z;
 }
 void MainGame::_initDefaults(void) {
 
@@ -461,11 +488,6 @@ void MainGame::_initDefaults(void) {
 	this->_lightDirLongitude = 180.0f;
 	this->_audioID = 0;
 	this->_audioSourceID = 0;
-	float radius = (this->_CUBE_WIDTH) / 4.5f;
-	this->_sphere.init(0, 0, 0, radius, VertexStructure::Color(255, 255, 255, 255), 50, 50);
-	this->_applyOrbShaderSettings();
-	this->_applyGridShaderSettings();
-	this->setupCamera();
 }
 bool MainGame::_initSound(const char* soundSourceName) {
 	ALuint soundID = SoundSystem::addAudioData(soundSourceName);
@@ -476,7 +498,7 @@ bool MainGame::_initSound(const char* soundSourceName) {
 	return true;
 }
 bool MainGame::_initSound(const void* soundSource, size_t size) {
-	ALuint soundID = SoundSystem::addAudioDataFromMemory((const BYTE*)soundSource, size);
+	ALuint soundID = SoundSystem::addAudioDataFromMemory((const unsigned char*)soundSource, size);
 	ALuint sourceID = SoundSystem::addAudioSource(1.0f, 1.0f);
 	if (!(soundID && sourceID)) return false;
 	this->_audioID = soundID;
@@ -484,6 +506,7 @@ bool MainGame::_initSound(const void* soundSource, size_t size) {
 	return true;
 }
 bool MainGame::_runBlastAnimation(unsigned long deltaTime) {
+	if (this->_gameHasEnded) return true;
 	bool gameHasEnded = false; //boolean flag to detect the end of a game.
 	if (this->_blastDisplacement == 0.0) SoundSystem::play(this->_audioID, this->_audioSourceID); //play game audio at the beginning of each blast animation.
 	glm::vec3 displacedCenter = { 0.0f, 0.0f, 0.0f };
@@ -558,15 +581,17 @@ bool MainGame::_runBlastAnimation(unsigned long deltaTime) {
 			AppGUIFrame* frame = this->getFrame();
 			if (frame != nullptr) frame->swapBuffers();
 			std::string winnerName = "";
-			int winnderIndex = 1;
+			int winnerIndex = 1;
 			for (const auto& player : this->_players) {
 				if (!(this->isEliminated(player))) {
 					winnerName = player;
 					break;
 				}
-				winnderIndex++;
+				winnerIndex++;
 			}
-			wxMessageBox(wxString::Format("Player %d (%s) won! Game Over!", winnderIndex, winnerName.c_str()), wxT("Information"), wxOK | wxICON_EXCLAMATION);
+			this->_winnerIndex = winnerIndex;
+			this->_winnerName.assign(winnerName);
+			this->_gameHasEnded = true;
 			gameHasEnded = true; //game has ended.
 		}
 	}
