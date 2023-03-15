@@ -86,7 +86,7 @@ AppGUIFrame::AppGUIFrame(const wxString& title = "", const wxPoint& position = w
 	for (unsigned int i = 0; i < AppGUIFrame::_maximumNumberOfPlayers; i++) {
 		wxPanel * subpanelForPlayerColor = new wxPanel(this->_panelOutsideGame, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 		subpanelForPlayerColor->SetBackgroundColour(wxColor(200, 200, 200));
-		label = new wxStaticText(subpanelForPlayerColor, wxID_STATIC, wxString::Format("Player %d:", i + 2), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER);
+		label = new wxStaticText(subpanelForPlayerColor, wxID_STATIC, wxString::Format("Player %d:", i + 1), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER);
 		label->SetBackgroundColour(wxColour(200, 200, 200));
 		wxBoxSizer* subsizerForPlayerColor = new wxBoxSizer(wxHORIZONTAL);
 		subsizerForPlayerColor->Add(label, 0, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL | wxALL, 3);
