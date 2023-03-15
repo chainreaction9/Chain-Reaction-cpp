@@ -19,7 +19,7 @@ The project can be built with [CMake](https://cmake.org/) (version >= 3.20). In 
 3. [OpenGL Mathematics (GLM)](https://glm.g-truc.net/0.9.9/)
 4. [OpenAL-Soft](https://github.com/kcat/openal-soft)
 
-The four default cmake options ```WXWIDGETS_AUTO_DOWNLOAD```, ```GLM_AUTO_DOWNLOAD```, ```GLEW_AUTO_DOWNLOAD```, ```OPENAL_AUTO_DOWNLOAD``` defined in ```DefaultOptions.cmake``` are set, so that if the dependencies are not available, they will automatically be downloaded with a ``` FetchContent_MakeAvailable``` call in the configuration time and be built from scratch. One can configure the a build with the follwing cmake commands from the project root directory:
+The four cmake options ```WXWIDGETS_AUTO_DOWNLOAD```, ```GLM_AUTO_DOWNLOAD```, ```GLEW_AUTO_DOWNLOAD```, ```OPENAL_AUTO_DOWNLOAD``` defined in [DefaultOptions.cmake](/DefaultOptions.cmake) are set by default, so that if the dependencies are not available, they will automatically be downloaded with a ``` FetchContent_MakeAvailable``` call in the configuration time and be built from scratch. One can configure the a build with the follwing cmake commands from the project root directory:
 
 - **Debug** build: 
 
@@ -28,11 +28,16 @@ cmake -S . -B destination_folder -DCMAKE_BUILD_TYPE=Debug
 ```
 
 - **Release** build : 
+
 ```bash
 cmake -S . -B destination_folder -DCMAKE_BUILD_TYPE=Release
 ```
 
-Assuming the configuration went well, you can build the binary executable by running the command `cmake --built destination_folder`.
+Assuming the configuration went well, you can build the binary executable by running the command 
+
+```bash
+cmake --build destination_folder
+```
 
 ### Resource files
-The project depends on the resource files (*.obj, shaders, *.wav, *mtl, etc.) in the [resource](/Chain-Reaction-cpp/src/Resources/resource) directory. On Windows platform [resource.zip](/Chain-Reaction-cpp/src/Resources/resource.zip) containing these files will automatically be embedded into the binary executable with the compilation of the source file [Chain-Reaction.rc](/Chain-Reaction-cpp/src/Chain-Reaction.rc). On other platforms the user will need to manually specify the zip file at the start of the application.
+The project depends on the resource files (*.obj, shaders, *.wav, *mtl, etc.) in the [resource](/Chain-Reaction-cpp/src/Resources/resource) directory. On Windows platform the zip resource [resource.zip](/Chain-Reaction-cpp/src/Resources/resource.zip) containing these files will automatically be embedded into the binary executable with the compilation of the source file [Chain-Reaction.rc](/Chain-Reaction-cpp/src/Chain-Reaction.rc). On other platforms the user will need to manually specify the zip file at the start of the application.
