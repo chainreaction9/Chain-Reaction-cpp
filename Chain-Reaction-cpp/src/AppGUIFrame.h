@@ -70,6 +70,11 @@ public:
 	* It toggles the state (enabled/disabled) of the dropdown menus designated for choosing color of a player.
 	*/
 	void OnPlayerSelection(wxCommandEvent& event);
+	/*
+	* @brief Resizes canvas window on sash-drag event.
+	* @param {wxSashEvent&} event: the sash-event object passed by top-level window.
+	*/
+	void OnSashDrag(wxSashEvent& event);
 	/*@brief Updates the current player in the GUI interface.*/
 	void UpdateTurnInGUI(unsigned int player = 2);
 	/*
@@ -97,6 +102,7 @@ private:
 	wxButton* _infoButton;
 	wxBoxSizer *_gameSubsizerForTurnLabel, *_topsizerForLeftWindow;
 	wxPanel *_panelOutsideGame, *_panelInsideGame;
+	wxSashLayoutWindow* _parentOfCanvasWindow;
 	std::vector<wxComboBox*> _playerColorsWidgetList;
 	static const std::vector<wxString> _colorList;
 	//An unordered map that points each color name to its corresponding RGB value.

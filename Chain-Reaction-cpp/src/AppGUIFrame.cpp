@@ -11,7 +11,7 @@ const unsigned int AppGUIFrame::_maximumNumberOfPlayers = (unsigned int) 8;
 const std::vector<wxString> AppGUIFrame::_colorList = {"Red","Blue","Green","Yellow","Cyan","Purple","Violet","Pink","Orange","Green 1","Brown","Maroon","Green 2","Grey"};
 const std::unordered_map<wxString, wxColor> AppGUIFrame::_colorMap = AppGUIFrame::_createColormap();
 //*****************************************************************************************************
-
+//*************************************** Public method ***********************************************
 AppGUIFrame::AppGUIFrame(const wxString& title = "", const wxPoint& position = wxDefaultPosition, const wxSize& size = wxDefaultSize, const wxSize& minsize = wxSize(0,0)): wxFrame(NULL, wxID_ANY, title, position, size){	
 	//*************************************
 	//The topmost sizer of the application frame
@@ -21,7 +21,6 @@ AppGUIFrame::AppGUIFrame(const wxString& title = "", const wxPoint& position = w
 	wxSashLayoutWindow *window1 = new wxSashLayoutWindow(this,wxID_ANY,wxPoint(0,0),wxDefaultSize,wxSW_3D);
 	window1->SetOrientation(wxLAYOUT_VERTICAL);
 	window1->SetAlignment(wxLAYOUT_LEFT);
-	window1->SetExtraBorderSize(2);
 
 	topsizer->Add(window1,0,wxEXPAND);
 	wxPanel *panelwindow = new wxPanel(window1);
@@ -264,11 +263,18 @@ AppGUIFrame::AppGUIFrame(const wxString& title = "", const wxPoint& position = w
 	wxSashLayoutWindow *window2 = new wxSashLayoutWindow(this,wxID_ANY,wxPoint(0,0),wxSize(500,500),wxSW_3D);
 	window2->SetOrientation(wxLAYOUT_VERTICAL);
 	window2->SetAlignment(wxLAYOUT_LEFT);
-	window2->SetBackgroundColour(wxColour(128, 128, 150));
-	window2->SetExtraBorderSize(2);
+	window2->SetBackgroundColour(wxColour(150, 150, 150));
 	topsizer->Add(window2,1,wxEXPAND);
-	this->canvas_panel = new AppGLCanvas(window2);
-	wxLogDebug(wxString::Format("[Chain-Reaction] Created wxGLCanvas (OpenGL) object %p ...", this->canvas_panel));
+	this->_parentOfCanvasWindow = new wxSashLayoutWindow(window2, wxID_ANY, wxPoint(200, 200), wxDefaultSize, wxSW_3D);
+	this->_parentOfCanvasWindow->SetOrientation(wxLAYOUT_VERTICAL);
+	this->_parentOfCanvasWindow->SetAlignment(wxLAYOUT_LEFT);
+	this->_parentOfCanvasWindow->SetBackgroundColour(wxColour(128, 128, 150));
+	this->_parentOfCanvasWindow->SetSashVisible(wxSASH_LEFT, true);
+	this->_parentOfCanvasWindow->SetSashVisible(wxSASH_RIGHT, true);
+	this->_parentOfCanvasWindow->SetSashVisible(wxSASH_TOP, true);
+	this->_parentOfCanvasWindow->SetSashVisible(wxSASH_BOTTOM, true);
+	this->_parentOfCanvasWindow->SetExtraBorderSize(1);
+	this->canvas_panel = new AppGLCanvas(this->_parentOfCanvasWindow);
 	topsizer->Fit(this);
 	this->SetMinSize(minsize);
 	
@@ -285,8 +291,25 @@ AppGUIFrame::AppGUIFrame(const wxString& title = "", const wxPoint& position = w
 		Bind(wxEVT_COMBOBOX_DROPDOWN, &AppGUIFrame::OnDropDown, this, ID_COLOR_CHOICE + i);
 	}
 	Bind(wxEVT_COMMAND_BUTTON_CLICKED, &AppGUIFrame::OnButtonRegisterOnline, this, ID_REGISTER_ONLINE);
+	Bind(wxEVT_SASH_DRAGGED, &AppGUIFrame::OnSashDrag, this, wxID_ANY);
 	wxLogDebug("[Chain-Reaction] Dynamic event-bindings to the application-frame object is completed ...");
 	//*********************************************************************************************************
+}
+void AppGUIFrame::OnButtonMainMenu(wxCommandEvent& event) {
+	int result = wxMessageBox(wxT("Current game will be lost. Continue?"), wxT("Confirmation"), wxNO_DEFAULT | wxYES_NO | wxICON_INFORMATION, this);
+	if (result == wxNO) return;
+	else {
+		GameUtilities::GameState* gameInfo = (GameUtilities::GameState*)this->canvas_panel->GetClientData();
+		if (gameInfo && gameInfo->game_started) gameInfo->go_back_main = REQUESTED_IN_OFFLINE_MODE;
+	}
+}
+void AppGUIFrame::OnButtonQuit(wxCommandEvent& event) {
+	this->Destroy();
+}
+void AppGUIFrame::OnButtonRegisterOnline(wxCommandEvent& event) {
+	wxString url("https://");
+	url.Append(REGISTRATION_HOSTNAME);
+	wxLaunchDefaultBrowser(url);
 }
 void AppGUIFrame::OnButtonStart(wxCommandEvent& event){
 	//Reject start of a game if OpenGL canvas is not yet ready for rendering...
@@ -344,6 +367,14 @@ void AppGUIFrame::OnButtonStart(wxCommandEvent& event){
 	gameInfo->game_ended = 0;
 
 }
+void AppGUIFrame::OnButtonStartNew(wxCommandEvent& event) {
+	int result = wxMessageBox(wxT("New game will start. Continue?"), wxT("Confirmation"), wxNO_DEFAULT | wxYES_NO | wxICON_INFORMATION, this);
+	if (result == wxNO) return;
+	else {
+		GameUtilities::GameState* gameInfo = (GameUtilities::GameState*)this->canvas_panel->GetClientData();
+		if (gameInfo && gameInfo->game_started) gameInfo->new_game = 1;
+	}
+}
 void AppGUIFrame::OnButtonTurnInfo(wxCommandEvent& event){
 	int id = event.GetId();
 	GameUtilities::GameState* gameInfo = (GameUtilities::GameState*)this->canvas_panel->GetClientData();
@@ -377,38 +408,7 @@ void AppGUIFrame::OnButtonUndo(wxCommandEvent& event){
 		return;
 	}
 }
-void AppGUIFrame::OnButtonStartNew(wxCommandEvent& event){
-	int result = wxMessageBox(wxT("New game will start. Continue?"),wxT("Confirmation"),wxNO_DEFAULT | wxYES_NO | wxICON_INFORMATION,this);
-	if (result == wxNO) return;
-	else{
-		GameUtilities::GameState* gameInfo = (GameUtilities::GameState*) this->canvas_panel->GetClientData();
-		if (gameInfo && gameInfo->game_started) gameInfo->new_game = 1;
-	}
-}
-void AppGUIFrame::OnButtonMainMenu(wxCommandEvent& event){
-	int result = wxMessageBox(wxT("Current game will be lost. Continue?"),wxT("Confirmation"),wxNO_DEFAULT | wxYES_NO | wxICON_INFORMATION,this);
-	if (result == wxNO) return;
-	else{
-		GameUtilities::GameState* gameInfo = (GameUtilities::GameState*) this->canvas_panel->GetClientData();
-		if (gameInfo && gameInfo->game_started) gameInfo->go_back_main = REQUESTED_IN_OFFLINE_MODE;
-	}
-}
-void AppGUIFrame::OnButtonQuit(wxCommandEvent& event) {
-	this->Destroy();
-}
-void AppGUIFrame::swapBuffers(void){
-	this->canvas_panel->SwapBuffers();
-}
-void AppGUIFrame::UpdateTurnInGUI(unsigned int player){
-	wxString playerLabel = wxString::Format("Player %d  ", player);
-	this->_turnLabel->SetLabel(playerLabel);
-	wxString playerColor = this->_playerColorsWidgetList[player-1]->GetStringSelection().Lower();
-	this->_turnLabel->SetBackgroundColour(AppGUIFrame::_colorMap.at(playerColor));
-	this->_gameSubsizerForTurnLabel->Layout();
-	this->_turnLabelStatic->Update();
-	this->_turnLabel->Update();
-}
-void AppGUIFrame::OnDropDown(wxCommandEvent& event){
+void AppGUIFrame::OnDropDown(wxCommandEvent& event) {
 	const int controlID = event.GetId();
 	wxComboBox* controller = nullptr;
 	bool isOnline = false;
@@ -437,36 +437,71 @@ void AppGUIFrame::OnDropDown(wxCommandEvent& event){
 	}
 	controller->SetStringSelection(selectedColor);
 }
-void AppGUIFrame::OnPlayerSelection(wxCommandEvent& event){
+void AppGUIFrame::OnPlayerSelection(wxCommandEvent& event) {
 	bool online = false;
 	int id = event.GetId();
-	unsigned int selectedOption = (unsigned int) event.GetSelection() + 2;
-	if (!online){
-		for(unsigned int i = 0; i < this->_playerColorsWidgetList.size(); i++){
-			wxChoice *dummyWidget = this->_playerColorsWidgetList[i];
-			if (i<selectedOption){
+	unsigned int selectedOption = (unsigned int)event.GetSelection() + 2;
+	if (!online) {
+		for (unsigned int i = 0; i < this->_playerColorsWidgetList.size(); i++) {
+			wxChoice* dummyWidget = this->_playerColorsWidgetList[i];
+			if (i < selectedOption) {
 				if (!(dummyWidget->IsEnabled())) dummyWidget->Enable();
 			}
-			else{
+			else {
 				if (dummyWidget->IsEnabled()) dummyWidget->Disable();
 			}
 		}
 	}
 }
-void AppGUIFrame::ShowGamePanel(bool state){
-	if (!state){
+void AppGUIFrame::OnSashDrag(wxSashEvent& event) {
+	wxRect sashRect = event.GetDragRect();
+	wxSashDragStatus isSashOk = event.GetDragStatus();
+	if (isSashOk != wxSASH_STATUS_OK) return;
+	wxSize currentSize = this->_parentOfCanvasWindow->GetClientSize();
+	wxSize currentParentSize = this->_parentOfCanvasWindow->GetParent()->GetClientSize();
+	wxPoint currentPosition = this->_parentOfCanvasWindow->GetPosition();
+	wxSashEdgePosition edge = event.GetEdge();
+	int newX = max(0, sashRect.x);
+	int newY = max(0, sashRect.y);
+	int newW = min(currentParentSize.GetWidth(), sashRect.width);
+	int newH = min(currentParentSize.GetHeight(), sashRect.height);
+	switch (edge) {
+		case wxSASH_LEFT:
+			this->_parentOfCanvasWindow->SetPosition(wxPoint(newX, currentPosition.y));
+			break;
+		case wxSASH_TOP:
+			this->_parentOfCanvasWindow->SetPosition(wxPoint(currentPosition.x, newY));
+			break;
+	}
+	this->_parentOfCanvasWindow->SetClientSize(wxSize(newW, newH));
+}
+void AppGUIFrame::ShowGamePanel(bool state) {
+	if (!state) {
 		this->_topsizerForLeftWindow->Hide(this->_panelInsideGame);
 		this->_topsizerForLeftWindow->Show(this->_panelOutsideGame);
 		this->_topsizerForLeftWindow->Layout();
 		this->_panelOutsideGame->Update();
 	}
-	else{
+	else {
 		this->_topsizerForLeftWindow->Hide(this->_panelOutsideGame);
 		this->_topsizerForLeftWindow->Show(this->_panelInsideGame);
 		this->_topsizerForLeftWindow->Layout();
 		this->_panelInsideGame->Update();
 	}
 }
+void AppGUIFrame::swapBuffers(void){
+	this->canvas_panel->SwapBuffers();
+}
+void AppGUIFrame::UpdateTurnInGUI(unsigned int player){
+	wxString playerLabel = wxString::Format("Player %d  ", player);
+	this->_turnLabel->SetLabel(playerLabel);
+	wxString playerColor = this->_playerColorsWidgetList[player-1]->GetStringSelection().Lower();
+	this->_turnLabel->SetBackgroundColour(AppGUIFrame::_colorMap.at(playerColor));
+	this->_gameSubsizerForTurnLabel->Layout();
+	this->_turnLabelStatic->Update();
+	this->_turnLabel->Update();
+}
+//************************************** Private method ***********************************************
 std::unordered_map<wxString,wxColor> AppGUIFrame::_createColormap(void){
 	std::unordered_map<wxString,wxColor> temp;
 	temp["green 1"] = wxColor(0,255,127);
@@ -485,9 +520,4 @@ std::unordered_map<wxString,wxColor> AppGUIFrame::_createColormap(void){
 	temp["maroon"] = wxColor(179,46,92);
 	temp["white"] = wxColor(255,255,255);
 	return temp;
-}
-void AppGUIFrame::OnButtonRegisterOnline(wxCommandEvent& event){
-	wxString url("https://");
-	url.Append(REGISTRATION_HOSTNAME);
-	wxLaunchDefaultBrowser(url);
 }
